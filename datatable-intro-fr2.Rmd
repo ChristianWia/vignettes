@@ -5,11 +5,11 @@ output:
   markdown::html_format
 vignette: >
   %\VignetteIndexEntry{Introduction à data.table}
-  % \VignetteEngine{knitr::knitr}
+  %\VignetteEngine{knitr::knitr}
   \usepackage[utf8]{inputenc}
 ---
 
-```{r
+```{r echo=FALSE, message=FALSE}
 require(data.table)
 knitr::opts_chunk$set(
   comment = "#",
@@ -64,7 +64,7 @@ available only for Jan-Oct'14.
 We can use `data.table`'s fast-and-friendly file reader `fread` to load `flights`
 directly as follows:
 
-```{r
+```{r echo = FALSE}
 options(width = 100L)
 ```
 
@@ -141,7 +141,7 @@ and selecting columns within the frame of a `data.table`, i.e., within `[ ... ]`
 as an analogy or in relevance to SQL). To understand it we will have to first
 look at the *general form* of the `data.table` syntax, as shown below:
 
-```{r
+```{r eval = FALSE}
 DT[i, j, by]
 
 ##   R:                 i                 j        by
