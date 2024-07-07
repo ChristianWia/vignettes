@@ -1190,26 +1190,33 @@ msgid ""
 "columns specified in `.SDcols` while grouping by the columns specified in "
 "`by`."
 msgstr ""
+"`DT[, lapply(.SD, fun), by = ..., .SDcols = ...]` - applique `fun` à toutes "
+"les colonnes spécifiées dans `.SDcols` en les regroupant selon les colonnes spécifiées dans "
+"`by`."
 
 #: d.Rmd:block 185 (unordered list)
 msgid ""
 "`DT[, head(.SD, 2), by = ...]` - return the first two rows for each group."
 msgstr ""
+"`DT[, head(.SD, 2), by = ...]` - renvoie les deux premières lignes de chaque groupe."
 
 #: d.Rmd:block 185 (unordered list)
 msgid ""
 "`DT[col > val, head(.SD, 1), by = ...]` - combine `i` along with `j` and `by`."
 msgstr ""
+"`DT[col > val, head(.SD, 1), by = ...]` - combine `i` avec `j` et `by`."
 
 #: d.Rmd:block 186 (header)
 msgid "And remember the tip:"
-msgstr ""
+msgstr "Et souvenez-vous du conseil :"
 
 #: d.Rmd:block 187 (paragraph)
 msgid ""
 "As long as `j` returns a `list`, each element of the list will become a "
 "column in the resulting `data.table`."
 msgstr ""
+"Tant que `j` renvoie une `liste`, chaque élément de la liste va devenir une"
+"colonne de la `data.table` résultante."
 
 #: d.Rmd:block 188 (paragraph)
 msgid ""
