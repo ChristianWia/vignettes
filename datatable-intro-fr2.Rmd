@@ -9,7 +9,7 @@ vignette: >
   \usepackage[utf8]{inputenc}
 ---
 
-```{r echo=FALSE, message=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 require(data.table)
 knitr::opts_chunk$set(
   comment = "#",
@@ -22,7 +22,7 @@ knitr::opts_chunk$set(
 ```
 
 Cette vignette présente la syntaxe de `data.table` , sa forme générale, comment
-*extraire les lignes*, *sélectionner et faires des opérations* sur les colonnes,
+*extraire les lignes*, *sélectionner et faire des opérations* sur les colonnes,
 et réaliser des agrégations *par groupe*. Il est avantageux d'être familiarisé
 avec la structure de données `data.frame` de base du R, mais cela n'est pas
 essentiel pour suivre cette vignette.
@@ -47,19 +47,19 @@ efficacement la mémoire.
 
 En résumé, si vous souhaitez réduire drastiquement le temps de *programmation* et
 de *compilation*, alors ce package est fait pour vous. C'est la philosophie
-suivie par `data.table` pour rendre cela possible. Notre but est d'illustrer
+suivie par  `data.table` pour rendre cela possible. Notre but est d'illustrer
 ceci au travers de cette série de vignettes.
 
 ## Données {#data}
 
-In this vignette, we will use
+Dans cette vignette, nous utiliseront les données
 [NYC-flights14](https://raw.githubusercontent.com/Rdatatable/data.table/master/vignettes/flights14.csv)
-data obtained from the [flights](https://github.com/arunsrinivasan/flights)
-package (available on GitHub only). It contains On-Time flights data from the
-Bureau of Transportation Statistics for all the flights that departed from New
-York City airports in 2014 (inspired by
-[nycflights13](https://github.com/tidyverse/nycflights13)). The data is
-available only for Jan-Oct'14.
+obtenues du package [flights](https://github.com/arunsrinivasan/flights)
+(disponible sur GitHub seulement). Il contient les horaires des vols d'avions du
+Bureau of Transportation Statistics à propos de tous les vols partant des
+aéroports de New York City en 2014 (inspiré de
+[nycflights13](https://github.com/tidyverse/nycflights13)). Les données ne
+concernent que les mois de janvier à octobre 2014.
 
 We can use `data.table`'s fast-and-friendly file reader `fread` to load `flights`
 directly as follows:
@@ -343,7 +343,7 @@ will see in the next section), to the point where `data.table` provides a
 When querying a `data.table` for elements that do not exist, the behavior differs
 based on the method used.
 
-```r
+```{r}
 setkeyv(flights, "origin")
 ```
 
@@ -353,7 +353,7 @@ setkeyv(flights, "origin")
 and `NA` for columns not found. When using `setkeyv`, the table is sorted by
 the specified keys and an internal index is created, enabling binary search for
 efficient subsetting.
-   ```r
+   ```{r}
    flights["XYZ"]
 # Returns:
 #    origin year month day dep_time sched_dep_time dep_delay arr_time sched_arr_time arr_delay carrier flight tailnum ...
@@ -363,7 +363,7 @@ efficient subsetting.
 
    This performs a standard subset operation that does not find any matching rows
 and thus returns an empty `data.table`.
-   ```r
+   ```{r}
      flights[origin == "XYZ"]
 # Returns:
 # Empty data.table (0 rows and 19 cols): year,month,day,dep_time,sched_dep_time,dep_delay,arr_time,sched_arr_time,arr_delay,...
@@ -371,7 +371,7 @@ and thus returns an empty `data.table`.
 * **Exact match using `nomatch=NULL`**
 
    For exact matches without `NA` for non-existing elements, use `nomatch=NULL`:
-   ```r
+   ```{r}
    flights["XYZ", nomatch=NULL]
 # Returns:
 # Empty data.table (0 rows and 19 cols): year,month,day,dep_time,sched_dep_time,dep_delay,arr_time,sched_arr_time,arr_delay,...
@@ -417,7 +417,7 @@ to a `data.frame` (since v1.9.8).
 
 #### -- Select both `arr_delay` and `dep_delay` columns the `data.frame` way.
 
-```{r
+```{r j_cols_no_with}
 ans <- flights[, c("arr_delay", "dep_delay")]
 head(ans)
 ```
@@ -427,7 +427,7 @@ options: Using the `..` prefix, or using the `with` argument.
 
 #### -- Select columns named in a variable using the `..` prefix
 
-```{r
+```{r  j_cols_dot_prefix}
 select_cols = c("arr_delay", "dep_delay")
 flights[ , ..select_cols]
 ```
@@ -463,7 +463,7 @@ DF[with(DF, x > 1), ]
 disables the ability to refer to columns as if they are variables, thereby
 restoring the "`data.frame` mode".
 * We can also *deselect* columns using `-` or `!`. For example:
-   ```{r
+   ```{r eval = FALSE}
    ## not run
 
 # returns all columns except arr_delay and dep_delay
@@ -473,7 +473,7 @@ ans <- flights[, -c("arr_delay", "dep_delay")]
    ```
 * From `v1.9.5+`, we can also select by specifying start and end column names,
 e.g., `year:day` to select the first three columns.
-   ```{r
+   ```{r eval = FALSE}
    ## not run
 
 # returns year,month and day
@@ -646,7 +646,7 @@ head(ans, 10)
 * We can tack expressions one after another, *forming a chain* of operations,
 i.e., `DT[ ... ][ ... ][ ... ]`.
 * Or you can also chain them vertically:
-   ```{r
+   ```{r eval = FALSE}
    DT[ ...
    ][ ...
      ][ ...
@@ -823,7 +823,7 @@ vectors of length 6,4,2. Therefore, (1) results in a length of `6+4+2 =`r
 
 The general form of `data.table` syntax is:
 
-```{r
+```{r  eval = FALSE}
 DT[i, j, by]
 ```
 
@@ -869,11 +869,11 @@ columns specified in `.SDcols` while grouping by the columns specified in
 As long as `j` returns a `list`, each element of the list will become a column in
 the resulting `data.table`.
 
-We will see how to *add/update/delete* columns *by reference* and how to combine
-them with `i` and `by` in the next vignette.
+Nous verrons dans la vignette suivante comment *ajouter / mettre à jour /
+supprimer* des colonnes *par référence* et comment les combiner avec 'i' et'by' .
 
 ***
 
-```{r,
+```{r,  echo=FALSE}
 setDTthreads(.old.th)
 ```
