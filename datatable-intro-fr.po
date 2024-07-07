@@ -131,20 +131,20 @@ msgstr ""
 
 #: d.Rmd:block 14 (header)
 msgid "Introduction"
-msgstr ""
+msgstr "Introduction"
 
 #: d.Rmd:block 15 (paragraph)
 msgid "In this vignette, we will"
-msgstr ""
+msgstr "Dans cette vignette, nous allons :"
 
 #: d.Rmd:block 16 (ordered list)
 msgid ""
-"Start with the basics - what is a `data.table`, its general form, how to "
-"*subset* rows, how to *select and compute* on columns;"
+"commencer par les notions de base - une `data.table` c'est quoi ? sa forme générale, comment faire... "
+"*sous-ensemble* de lignes, comment *sélectionner et faire des caluls* sur les colonbes;"
 msgstr ""
 
 #: d.Rmd:block 16 (ordered list)
-msgid "Then we will look at performing data aggregations by group"
+msgid "Puis nous aborderons la manière d'agréger les données en groupes"
 msgstr ""
 
 #: d.Rmd:block 17 (header)
