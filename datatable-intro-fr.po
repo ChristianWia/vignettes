@@ -122,12 +122,17 @@ msgid ""
 "We can use `data.table`'s fast-and-friendly file reader `fread` to load "
 "`flights` directly as follows:"
 msgstr ""
+"Vous pouvez utiliser le lecteur de fichier rapide et convivial 'fread' de 'data.table' piur charger "
+"'flights' ditectement ainsi :"
 
 #: d.Rmd:block 13 (paragraph)
 msgid ""
 "Aside: `fread` accepts `http` and `https` URLs directly, as well as operating "
 "system commands such as `sed` and `awk` output. See `?fread` for examples."
 msgstr ""
+"A noter : 'fread' accepte direcyement les URLS 'http' et 'https', ainsi que les commandes "
+"système opérationnelles telles que les sorties de 'sed' et 'awk'. Voir '?fread' pour "
+"les exemples."
 
 #: d.Rmd:block 14 (header)
 msgid "Introduction"
