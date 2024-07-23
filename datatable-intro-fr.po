@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: cluster 2.1.6\n"
 "POT-Creation-Date: 2021-08-19 20:27\n"
-"PO-Revision-Date: 2024-07-05 21:28+0200\n"
+"PO-Revision-Date: 2024-07-23 19:20+0200\n"
 "Last-Translator: Christian Wiat <w9204-rs@yahoo.com>\n"
 "Language-Team: none\n"
 "Language: fr\n"
@@ -176,6 +176,7 @@ msgstr ""
 "[Data](#data) section ci-dessus, nous avons vu comment créer une 'data.table' avec "
 "'fread()', mais on peut aussi en créer une en utilisant la fonction 'data.table()' "
 ". Voici un exemple :"
+
 #: d.Rmd:block 21 (paragraph)
 msgid ""
 "You can also convert existing objects to a `data.table` using `setDT()` (for "
@@ -193,6 +194,8 @@ msgid ""
 "Row numbers are printed with a `:` in order to visually separate the row "
 "number from the first column."
 msgstr ""
+"Les numéros de lignes sont imprimés avec un ':' pour séparer visuellement le "
+"numéro de ligne, de la première colonne."
 
 #: d.Rmd:block 23 (unordered list)
 msgid ""
@@ -210,6 +213,9 @@ msgid ""
 "`data.table` doesn't set or use *row names*, ever. We will see why in the *"
 "\"Keys and fast binary search based subset\"* vignette."
 msgstr ""
+"'data.table' n'initialise pas ni n'utilise jamais les *row names*. Nous "
+"verrons pourquoi dans la vignette *\"Clés et sous ensemble basé sur la "
+"recherche binaire rapide\"*."
 
 #: d.Rmd:block 24 (header)
 msgid ""
@@ -248,16 +254,20 @@ msgid ""
 "Let's begin by looking at `i` and `j` first - subsetting rows and operating "
 "on columns."
 msgstr ""
+"Commençons par voir 'i' et 'j' d'abord - en indiçant les lignes et en "
+"travaillant sur les colonnes."
 
 #: d.Rmd:block 31 (header)
 msgid "c) Subset rows in `i` {#subset-i-1c}"
-msgstr ""
+msgstr "c) Regrouper les lignes en 'i' {#subset-i-1c}"
 
 #: d.Rmd:block 32 (header)
 msgid ""
 "-- Get all the flights with \"JFK\" as the origin airport in the month of "
 "June."
 msgstr ""
+"-- Obtenir tous les vols qui ont \"JFK\" comme aéroport de départ pendant "
+"le mois de juin."
 
 #: d.Rmd:block 34 (unordered list)
 msgid ""
@@ -302,7 +312,7 @@ msgstr ""
 
 #: d.Rmd:block 39 (paragraph)
 msgid "We can use the R function `order()` to accomplish this."
-msgstr ""
+msgstr "Nous pouvons utiliser la fonction R 'order()' pour faire cela."
 
 #: d.Rmd:block 41 (header)
 msgid "`order()` is internally optimised"
@@ -332,11 +342,12 @@ msgstr ""
 
 #: d.Rmd:block 44 (header)
 msgid "d) Select column(s) in `j` {#select-j-1d}"
-msgstr ""
+msgstr "d) Sélection de colonne(s) dans 'j' {#select-j-1d}"
 
 #: d.Rmd:block 45 (header)
 msgid "-- Select `arr_delay` column, but return it as a *vector*."
-msgstr ""
+msgstr "-- Sélectionner la colonne 'arr_delay', mais la renvoyer "
+"en tant que *vector*."
 
 #: d.Rmd:block 47 (unordered list)
 msgid ""
@@ -347,11 +358,12 @@ msgstr ""
 
 #: d.Rmd:block 47 (unordered list)
 msgid "It returns *all* the rows for the column `arr_delay`."
-msgstr ""
+msgstr "Il renvoie *toutes* les lignes de la colonne 'arr_delay'."
 
 #: d.Rmd:block 48 (header)
 msgid "-- Select `arr_delay` column, but return as a `data.table` instead."
-msgstr ""
+msgstr "-- Sélectionner la colonne 'arr_delay', mais la renvoyer en tant "
+"que 'data.table'."
 
 #: d.Rmd:block 50 (unordered list)
 msgid ""
@@ -379,7 +391,7 @@ msgstr ""
 
 #: d.Rmd:block 52 (header)
 msgid "Tip: {#tip-1}"
-msgstr ""
+msgstr "Conseil : {#tip-1}"
 
 #: d.Rmd:block 53 (paragraph)
 msgid ""
@@ -411,15 +423,15 @@ msgstr ""
 
 #: d.Rmd:block 60 (header)
 msgid "e) Compute or *do* in `j`"
-msgstr ""
+msgstr "e) Calcul ou *do* dans 'j'"
 
 #: d.Rmd:block 61 (header)
 msgid "-- How many trips have had total delay < 0?"
-msgstr ""
+msgstr "-- Combien de voyages on eu un retard total < 0 ?"
 
 #: d.Rmd:block 63 (header)
 msgid "What's happening here?"
-msgstr ""
+msgstr "Que se passe-t-il dans ce cas ?"
 
 #: d.Rmd:block 64 (unordered list)
 msgid ""
