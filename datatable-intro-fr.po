@@ -161,6 +161,7 @@ msgstr "1. Les bases {#basics-1}"
 #: d.Rmd:block 18 (header)
 msgid "a) What is `data.table`? {#what-is-datatable-1a}"
 msgstr ""
+"a) 'data.table' c'est quoi ? {#what-is-datatable-1a}"
 
 #: d.Rmd:block 19 (paragraph)
 msgid ""
@@ -170,7 +171,11 @@ msgid ""
 "`fread()`, but alternatively we can also create one using the `data.table()` "
 "function. Here is an example:"
 msgstr ""
-
+"'data.table' est un package R qui fournit **une version étendue** d'un 'data."
+"frame', qui est la structure de données standard pour stocker des données dans la 'base' R. Dans la "
+"[Data](#data) section ci-dessus, nous avons vu comment créer une 'data.table' avec "
+"'fread()', mais on peut aussi en créer une en utilisant la fonction 'data.table()' "
+". Voici un exemple :"
 #: d.Rmd:block 21 (paragraph)
 msgid ""
 "You can also convert existing objects to a `data.table` using `setDT()` (for "
@@ -181,7 +186,7 @@ msgstr ""
 
 #: d.Rmd:block 22 (header)
 msgid "Note that:"
-msgstr ""
+msgstr "Notez que :"
 
 #: d.Rmd:block 23 (unordered list)
 msgid ""
@@ -210,6 +215,7 @@ msgstr ""
 msgid ""
 "b) General form - in what way is a `data.table` *enhanced*? {#enhanced-1b}"
 msgstr ""
+"b) Forme générale - dans quel sens la 'data.table' est-elle *étendue* ? {#enhanced-1b}"
 
 #: d.Rmd:block 25 (paragraph)
 msgid ""
@@ -225,10 +231,12 @@ msgstr ""
 msgid ""
 "Users with an SQL background might perhaps immediately relate to this syntax."
 msgstr ""
+"Les utilisateurs qui ont des connaissances SQL pourraient peut-être faire 
+"immédiatement le lien avec cette syntaxe."
 
 #: d.Rmd:block 28 (header)
 msgid "The way to read it (out loud) is:"
-msgstr ""
+msgstr "La manière de le lire (à haute voix) est :"
 
 #: d.Rmd:block 29 (paragraph)
 msgid ""
@@ -277,7 +285,7 @@ msgstr ""
 
 #: d.Rmd:block 35 (header)
 msgid "-- Get the first two rows from `flights`. {#subset-rows-integer}"
-msgstr ""
+msgstr "-- Récupérer les deux premières lignes de 'flights'. {#subset-rows-integer}"
 
 #: d.Rmd:block 37 (unordered list)
 msgid ""
@@ -298,7 +306,7 @@ msgstr ""
 
 #: d.Rmd:block 41 (header)
 msgid "`order()` is internally optimised"
-msgstr ""
+msgstr "'order()' est optimisé en interne"
 
 #: d.Rmd:block 42 (unordered list)
 msgid ""
@@ -1095,7 +1103,7 @@ msgstr ""
 
 #: d.Rmd:block 172 (paragraph)
 msgid "For example:"
-msgstr ""
+msgstr "Par exemple :"
 
 #: d.Rmd:block 174 (paragraph)
 msgid ""
@@ -1107,7 +1115,7 @@ msgstr ""
 
 #: d.Rmd:block 175 (header)
 msgid "Summary"
-msgstr ""
+msgstr "Résumé"
 
 #: d.Rmd:block 176 (paragraph)
 msgid "The general form of `data.table` syntax is:"
@@ -1115,11 +1123,11 @@ msgstr ""
 
 #: d.Rmd:block 178 (paragraph)
 msgid "We have seen so far that,"
-msgstr ""
+msgstr "Jusqu'ici nous avons vu que,"
 
 #: d.Rmd:block 179 (header)
 msgid "Using `i`:"
-msgstr ""
+msgstr "En utilisant 'i' : "
 
 #: d.Rmd:block 180 (unordered list)
 msgid ""
@@ -1143,7 +1151,7 @@ msgstr ""
 
 #: d.Rmd:block 182 (header)
 msgid "Using `j`:"
-msgstr ""
+msgstr "En utilisant 'j' :
 
 #: d.Rmd:block 183 (ordered list)
 msgid "Select columns the `data.table` way: `DT[, .(colA, colB)]`."
@@ -1155,19 +1163,19 @@ msgstr ""
 
 #: d.Rmd:block 183 (ordered list)
 msgid "Compute on columns: `DT[, .(sum(colA), mean(colB))]`."
-msgstr ""
+msgstr "Evaluer sur les colonnes : 'DT[, .(sum(colA), mean(colB))]'."
 
 #: d.Rmd:block 183 (ordered list)
 msgid "Provide names if necessary: `DT[, .(sA =sum(colA), mB = mean(colB))]`."
-msgstr ""
+msgstr "Fournir les noms si nécessaire : 'DT[, .(sA =sum(colA), mB = mean(colB))]'."
 
 #: d.Rmd:block 183 (ordered list)
 msgid "Combine with `i`: `DT[colA > value, sum(colB)]`."
-msgstr ""
+msgstr "Combiner avec 'i' : 'DT[colA > value, sum(colB)]'."
 
 #: d.Rmd:block 184 (header)
 msgid "Using `by`:"
-msgstr ""
+msgstr "En utilisant 'by' :"
 
 #: d.Rmd:block 185 (unordered list)
 msgid ""
@@ -1197,21 +1205,21 @@ msgid ""
 "columns specified in `.SDcols` while grouping by the columns specified in "
 "`by`."
 msgstr ""
-"`DT[, lapply(.SD, fun), by = ..., .SDcols = ...]` - applique `fun` à toutes "
-"les colonnes spécifiées dans `.SDcols` en les regroupant selon les colonnes spécifiées dans "
-"`by`."
+"'DT[, lapply(.SD, fun), by = ..., .SDcols = ...]' - applique 'fun' à toutes "
+"les colonnes spécifiées dans '.SDcols' en les regroupant selon les colonnes spécifiées dans "
+"'by'."
 
 #: d.Rmd:block 185 (unordered list)
 msgid ""
 "`DT[, head(.SD, 2), by = ...]` - return the first two rows for each group."
 msgstr ""
-"`DT[, head(.SD, 2), by = ...]` - renvoie les deux premières lignes de chaque groupe."
+"'DT[, head(.SD, 2), by = ...]' - renvoie les deux premières lignes de chaque groupe."
 
 #: d.Rmd:block 185 (unordered list)
 msgid ""
 "`DT[col > val, head(.SD, 1), by = ...]` - combine `i` along with `j` and `by`."
 msgstr ""
-"`DT[col > val, head(.SD, 1), by = ...]` - combine `i` avec `j` et `by`."
+"'DT[col > val, head(.SD, 1), by = ...]' - combine 'i' avec 'j' et 'by'."
 
 #: d.Rmd:block 186 (header)
 msgid "And remember the tip:"
@@ -1222,8 +1230,8 @@ msgid ""
 "As long as `j` returns a `list`, each element of the list will become a "
 "column in the resulting `data.table`."
 msgstr ""
-"Tant que `j` renvoie une `liste`, chaque élément de la liste va devenir une"
-"colonne de la `data.table` résultante."
+"Tant que 'j renvoie une 'liste', chaque élément de la liste va devenir une"
+"colonne de la 'data.table' résultante."
 
 #: d.Rmd:block 188 (paragraph)
 msgid ""
@@ -1232,4 +1240,4 @@ msgid ""
 msgstr ""
 "Nous verrons dans la vignette suivante comment *ajouter / mettre à jour "
 "/ supprimer* des colonnes *par référence* et comment les combiner avec "
-"'i' et'by' ."
+"'i' et 'by' ."
