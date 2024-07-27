@@ -124,7 +124,7 @@ msgid ""
 "Aside: `fread` accepts `http` and `https` URLs directly, as well as operating system commands such as "
 "`sed` and `awk` output. See `?fread` for examples."
 msgstr ""
-"A noter : 'fread' accepte direcyement les URLS 'http' et 'https', ainsi que les commandes système "
+"A noter : 'fread' accepte directement les URLS 'http' et 'https', ainsi que les commandes système "
 "opérationnelles telles que les sorties de 'sed' et 'awk'. Voir '?fread' pour les exemples."
 
 #: d.Rmd:block 14 (header)
