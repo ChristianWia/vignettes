@@ -14,12 +14,22 @@ Les outils sont issus de -> https://github.com/mondeja/mdpo
 
 md2po  pour générer les .pot & .po
 
+Command:
+```
+md2po datatable-intro-fr.Rmd --quiet --save --po-filepath e:/datatable-intro-fr.po
+```
+
 L'utilisation de md2po extrait ce qu'il y a entre les parties de code. La découpe faite par l'outil est assez fine. Elle suit la structure du paragraphe original. Les parties à traduire sont relativement petites (1 à 3 phrases en général) ce qui est plus agréable que d'avoir à traduire des gros blocs de texte. 
 
 Le fichier .po est utilisable dans Poedit après quelques adaptations de l'entête
 
 une fois satisfait on recolle les morceaux avec l'outil   po2md
 à partir du fichier initial .Rmd et de ce qu'il y a dans le .po
+
+Command:
+```
+po2md e:/datatable-intro-fr.Rmd --pofiles e:/datatable-intro-fr.po --save e:/datatable-intro-fr2.Rmd
+```
 
 ce qui donne le fichier  datatable-intro-fr2.Rmd
 
