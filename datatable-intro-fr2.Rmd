@@ -1,15 +1,15 @@
 ---
-title: "Introduction à data.table"
+title: "Introduction to data.table"
 date: "`r Sys.Date()`"
 output:
   markdown::html_format
 vignette: >
-  %\VignetteIndexEntry{Introduction à data.table}
+  %\VignetteIndexEntry{Introduction to data.table}
   %\VignetteEngine{knitr::knitr}
   \usepackage[utf8]{inputenc}
 ---
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 require(data.table)
 knitr::opts_chunk$set(
   comment = "#",
@@ -21,11 +21,7 @@ knitr::opts_chunk$set(
 .old.th = setDTthreads(1)
 ```
 
-Cette vignette présente la syntaxe de `data.table` , sa forme générale, comment
-*extraire les lignes*, *sélectionner et faire des opérations* sur les colonnes,
-et réaliser des agrégations *par groupe*. Il est avantageux d'être familiarisé
-avec la structure de données `data.frame` de base du R, mais cela n'est pas
-essentiel pour suivre cette vignette.
+Cette vignette présente la syntaxe de `data.table` , sa forme générale, comment *extraire les lignes*, *sélectionner et faires des opérations* sur les colonnes, et réaliser des agrégations *par groupe*. Il est avantageux d'être familiarisé avec la structure de données `data.frame` de base du R, mais cela n'est pas essentiel pour suivre cette vignette.
 
 ***
 
@@ -61,8 +57,8 @@ aéroports de New York City en 2014 (inspiré de
 [nycflights13](https://github.com/tidyverse/nycflights13)). Les données ne
 concernent que les mois de janvier à octobre 2014.
 
-We can use `data.table`'s fast-and-friendly file reader `fread` to load `flights`
-directly as follows:
+Vous pouvez utiliser le lecteur de fichier rapide et convivial 'fread' de
+'data.table' pour charger 'flights' directement ainsi :
 
 ```{r echo = FALSE}
 options(width = 100L)
@@ -79,26 +75,28 @@ flights
 dim(flights)
 ```
 
-Aside: `fread` accepts `http` and `https` URLs directly, as well as operating
-system commands such as `sed` and `awk` output. See `?fread` for examples.
+A noter : 'fread' accepte direcyement les URLS 'http' et 'https', ainsi que les
+commandes système opérationnelles telles que les sorties de 'sed' et 'awk'. Voir
+'?fread' pour les exemples.
 
 ## Introduction
 
-In this vignette, we will
+Dans cette vignette, nous allons
 
-1. Start with the basics - what is a `data.table`, its general form, how to
-*subset* rows, how to *select and compute* on columns;
-1. Then we will look at performing data aggregations by group
+1. Commencer par les notions de base - une 'data.table' c'est quoi ? sa forme
+générale, comment extraire des *sous-ensemble* de lignes, comment
+*sélectionner et calculer* avec les colonnes;
+1. Puis nous aborderons la manière d'agréger les données en groupes
 
-## 1. Basics {#basics-1}
+## 1. Les bases {#basics-1}
 
-### a) What is `data.table`? {#what-is-datatable-1a}
+### a) 'data.table' c'est quoi ? {#what-is-datatable-1a}
 
-`data.table` is an R package that provides **an enhanced version** of a
-`data.frame`, the standard data structure for storing data in `base` R. In the
-[Data](#data) section above, we saw how to create a `data.table` using
-`fread()`, but alternatively we can also create one using the `data.table()`
-function. Here is an example:
+'data.table' est un package R qui fournit **une version étendue** d'un
+'data.frame', qui est la structure de données standard pour stocker des données
+dans la 'base' R. Dans la [Data](#data) section ci-dessus, nous avons vu comment
+créer une 'data.table' avec 'fread()', mais on peut aussi en créer une en
+utilisant la fonction 'data.table()' . Voici un exemple :
 
 ```{r}
 DT = data.table(
@@ -111,35 +109,39 @@ DT
 class(DT$ID)
 ```
 
-You can also convert existing objects to a `data.table` using `setDT()` (for
-`data.frame` and `list` structures) or `as.data.table()` (for other structures).
-For more details pertaining to the difference (goes beyond the scope of this
-vignette), please see `?setDT` and `?as.data.table`.
+Vous pouvez aussi convertir des objets existants en une `data.table` en utilisant
+`setDT()` (pour les structures `data.frame` et `list`) ou `as.data.table()`
+(pour les autres structures). Pour les autres détails concernant les différences
+(ce qui est hors du champ de cette vignette), voir `?setDT` et `?as.data.table`.
 
-#### Note that:
+#### Notez que :
 
-* Row numbers are printed with a `:` in order to visually separate the row number
-from the first column.
-* When the number of rows to print exceeds the global option
-`datatable.print.nrows` (default = `r getOption("datatable.print.nrows")`), it
-automatically prints only the top 5 and bottom 5 rows (as can be seen in the
-[Data](#data) section). For a large `data.frame`, you may have found yourself
-waiting around while larger tables print-and-page, sometimes seemingly
-endlessly. This restriction helps with that, and you can query the default
-number like so:
+* Les numéros de lignes sont imprimés avec un ':' pour séparer visuellement le
+numéro de ligne, de la première colonne.
+* Quand le nombre de lignes à imprimer dépasse l'option globale
+`datatable.print.nrows` (valeur par défaut =
+`r getOption("datatable.print.nrows")`), il affiche automatiquement uniquement
+les 5 premières lignes et les 5 dernières (comme on peut le voir dans la section
+[Data](#data). Pour un grand `data.frame`, il est possible que vous restiez en
+attente le temps que les tableaux plus importants soient sortis, ce qui peut
+paraître interminable. Cette restriction vous aide en ce sens, et vous pouvez
+demander le nombre par défaut ainsi :
    ```{.r}
    getOption("datatable.print.nrows")
    ```
-* `data.table` doesn't set or use *row names*, ever. We will see why in the
-*"Keys and fast binary search based subset"* vignette.
+* 'data.table' n'initialise pas ni n'utilise jamais les *row names*. Nous verrons
+pourquoi dans la vignette *"Clés et sous ensemble basé sur la recherche
+binaire rapide"*.
 
-### b) General form - in what way is a `data.table` *enhanced*? {#enhanced-1b}
+### b) Forme générale - dans quel sens la 'data.table' est-elle *étendue* ? {#enhanced-1b}
 
-In contrast to a `data.frame`, you can do *a lot more* than just subsetting rows
-and selecting columns within the frame of a `data.table`, i.e., within `[ ... ]`
-(NB: we might also refer to writing things inside `DT[...]` as "querying `DT`",
-as an analogy or in relevance to SQL). To understand it we will have to first
-look at the *general form* of the `data.table` syntax, as shown below:
+Par rapport à un `data.frame`, vous pouvez  faire *beaucoup plus de choses*
+qu'extraire des lignes et sélectionner des colonnes dans la structure d'une
+`data.table`, par exemple, avec `[ ... ]` (Notez bien : nous pourrions aussi
+faire référence à écrire quelque chose dans `DT[...]` comme "interroger `DT`",
+par analogie ou similairement à SQL). Pour le comprendre il faut d'abord que
+nous regardions la *forme générale* de la syntaxe `data.table`, comme indiqué
+ci-dessous :
 
 ```{r eval = FALSE}
 DT[i, j, by]
@@ -148,115 +150,118 @@ DT[i, j, by]
 ## SQL:  where | order by   select | update  group by
 ```
 
-Users with an SQL background might perhaps immediately relate to this syntax.
+Les utilisateurs ayant des connaissances SQL feront peut être directement le lien
+avec cette syntaxe.
 
-#### The way to read it (out loud) is:
+#### La manière de le lire (à haute voix) est :
 
-Take `DT`, subset/reorder rows using `i`, then calculate `j`, grouped by `by`.
+Utiliser `DT`, extraire ou trier les lignes en utilisant `i`, puis calculer `j`,
+grouper avec `by`.
 
-Let's begin by looking at `i` and `j` first - subsetting rows and operating on
-columns.
+Commençons par voir 'i' et 'j' d'abord - en indiçant les lignes et en travaillant
+sur les colonnes.
 
-### c) Subset rows in `i` {#subset-i-1c}
+### c) Regrouper les lignes en 'i' {#subset-i-1c}
 
-#### -- Get all the flights with "JFK" as the origin airport in the month of June.
+#### -- Obtenir tous les vols qui ont "JFK" comme aéroport de départ pendant le mois de juin.
 
 ```{r}
 ans <- flights[origin == "JFK" & month == 6L]
 head(ans)
 ```
 
-* Within the frame of a `data.table`, columns can be referred to *as if they are
-variables*, much like in SQL or Stata. Therefore, we simply refer to `origin`
-and `month` as if they are variables. We do not need to add the prefix
-`flights$` each time. Nevertheless, using `flights$origin` and `flights$month`
-would work just fine.
-* The *row indices* that satisfy the condition `origin == "JFK" & month == 6L`
-are computed, and since there is nothing else left to do, all columns from
-`flights` at rows corresponding to those *row indices* are simply returned as a
-`data.table`.
-* A comma after the condition in `i` is not required. But
-`flights[origin == "JFK" & month == 6L, ]` would work just fine. In a
-`data.frame`, however, the comma is necessary.
+* Dans la structure d'une `data.table`, les colonnes peuvent être référencées
+*comme s'il s'agissait de variables*, un peu comme dans SQL ou Stata. C'est
+pourquoi nous utiliseront simplement `origin` et `month` comme des variables. Il
+n'est pas nécessaire d'ajouter le préfixe `flights$` à chaque fois. Néanmoins,
+utiliser `flights$origin` et `flights$month` fonctionne aussi bien.
+* Les *indices des lignes* qui vérifient la condition
+`origin == "JFK" & month == 6L` sont calculés, et comme il ne reste plus rien
+d'autre à faire, toutes les colonnes de `flights` des lignes qui correspondent à
+ces *indices de lignes* sont simplement renvoyées en tant que `data.table`.
+* Une virgule après la condition dans `i` n'est pas nécessaire. Mais
+`flights[origin == "JFK" & month == 6L, ]` fonctionnera aussi bien. Avec une
+`data.frame` néanmoins, la virgule est obligatoire.
 
-#### -- Get the first two rows from `flights`. {#subset-rows-integer}
+#### -- Récupérer les deux premières lignes de 'flights'. {#subset-rows-integer}
 
 ```{r}
 ans <- flights[1:2]
 ans
 ```
 
-* In this case, there is no condition. The row indices are already provided in
-`i`. We therefore return a `data.table` with all columns from `flights` at
-rows for those *row indices*.
+* Dans ce cas il n'y a pas de condition. Les indices de ligne sont déjà fournis
+dans `i`. C'est pourquoi nous renvoyons une `data.table` avec toutes les
+colonnes de `flights` pour les lignes qui correspondent aux *row indices*.
 
-#### -- Sort `flights` first by column `origin` in *ascending* order, and then by
-`dest` in *descending* order:
+#### -- Trier `flights` d'abord sur la colonne `origin` dans l'ordre *ascending*, puis par `dest` dans l'ordre *descending* :
 
-We can use the R function `order()` to accomplish this.
+Nous pouvons utiliser la fonction R 'order()' pour faire cela.
 
 ```{r}
 ans <- flights[order(origin, -dest)]
 head(ans)
 ```
 
-#### `order()` is internally optimised
+#### 'order()' est optimisé en interne
 
-* We can use "-" on `character` columns within the frame of a `data.table` to
-sort in decreasing order.
-* In addition, `order(...)` within the frame of a `data.table` uses
-`data.table`'s internal fast radix order `forder()`. This sort provided such a
-compelling improvement over R's `base::order` that the R project adopted the
-`data.table` algorithm as its default sort in 2016 for R 3.3.0 (for reference,
-check `?sort` and the [R Release
-NEWS](https://cran.r-project.org/doc/manuals/r-release/NEWS.pdf)).
+* Il est possible d'utiliser '-' avec les colonnes de type `character` dans le
+cadre d'une `data.table` pour trier par ordre décroissant.
+* De plus, `order(...)` dans la structure d'une `data.table` utilise 's le fast
+radix order interne `forder()` de `data.table`. Ce tri a produit de telles
+améliorations par rapport au `base::order` de R que le projet R a adopté
+l'algorithme `data.table` pour son tri par défaut en 2016 pour R 3.3.0 (pour les
+références, vérifiez `?sort` et les [Informations des versions
+R](https://cran.r-project.org/doc/manuals/r-release/NEWS.pdf)).
 
-We will discuss `data.table`'s fast order in more detail in the *`data.table`
-internals* vignette.
+Nous discuterons de l'ordonnancement rapide de la `data.table` plus en détails
+dans la vignette *fonctionnement interne de `data.table` internals*.
 
-### d) Select column(s) in `j` {#select-j-1d}
+### d) Sélection de colonne(s) dans 'j' {#select-j-1d}
 
-#### -- Select `arr_delay` column, but return it as a *vector*.
+#### -- Sélectionner la colonne 'arr_delay', mais la renvoyer en tant que *vector*.
 
 ```{r}
 ans <- flights[, arr_delay]
 head(ans)
 ```
 
-* Since columns can be referred to as if they are variables within the frame of a
-`data.table`, we directly refer to the *variable* we want to subset. Since we
-want *all the rows*, we simply skip `i`.
-* It returns *all* the rows for the column `arr_delay`.
+* Comme les colonnes peuvent être référencées comme des variables de la structure
+d'une `data.table`, nous utilisons directement la *variable* que nous voulons
+extraire. Comme nous voulons *toutes les lignes*, nous omettons simplement `i`.
+* Il renvoie *toutes* les lignes de la colonne 'arr_delay'.
 
-#### -- Select `arr_delay` column, but return as a `data.table` instead.
+#### -- Sélectionner la colonne 'arr_delay', mais la renvoyer en tant que 'data.table'.
 
 ```{r}
 ans <- flights[, list(arr_delay)]
 head(ans)
 ```
 
-* We wrap the *variables* (column names) within `list()`, which ensures that a
-`data.table` is returned. In the case of a single column name, not wrapping
-with `list()` returns a vector instead, as seen in the [previous
-example](#select-j-1d).
-* `data.table` also allows wrapping columns with `.()` instead of `list()`. It is
-an *alias* to `list()`; they both mean the same. Feel free to use whichever
-you prefer; we have noticed most users seem to prefer `.()` for conciseness, so
-we will continue to use `.()` hereafter.
+* Nous encadrons les *variables* (noms des colonnes) avec `list()`, qui assure
+qu'une `data.table` est renvoyée. Dans le cas d'un seul nom de colonne, si on
+n'encadre pas avec `list()` alors on renvoie un vecteur à la place, comme on l'a
+vu dans l'[exemple précédent](#select-j-1d).
+* `data.table` permet aussi d'inclure les colonnes avec `.()` à la place de
+`list()`. C'est un *alias* de `list()`; ils signifient la même chose. Utilisez
+la forme que vous souhaitez; nous avons remarqué que la plupart des utilisateurs
+semblent préférer `.()` pour être plus concis, donc nous continuerons à utiliser
+`.()` par la suite.
 
-A `data.table` (and a `data.frame` too) is internally a `list` as well, with the
-stipulation that each element has the same length and the `list` has a `class`
-attribute. Allowing `j` to return a `list` enables converting and returning
-`data.table` very efficiently.
+Une `data.table` (et également une `data.frame`) est aussi en interne une
+`list` , avec la caractéristique que chaque élément a la même longueur et que la
+`list` possède un attribut `class`. En permettant à `j` de renvoyer une `list`
+cela permet de convertir et de renvoyer des `data.table` très efficacement.
 
-#### Tip: {#tip-1}
+#### Conseil : {#tip-1}
 
-As long as `j-expression` returns a `list`, each element of the list will be
-converted to a column in the resulting `data.table`. This makes `j` quite
-powerful, as we will see shortly. It is also very important to understand this
-for when you'd like to make more complicated queries!!
+Tant que `j-expression` renvoie une `list`, chaque élément de la liste sera
+converti en colonne dans la `data.table` résultante. Ce qui fait que `j` est
+très puissant, comme nous le verrons bientôt. Il est aussi très important de
+comprendre cela dans le cas où vous auriez à faire des requêtes plus
+compliquées !!
 
-#### -- Select both `arr_delay` and `dep_delay` columns.
+#### -- Sélectionner à la fois les colonnes `arr_delay` et `dep_delay`.
 
 ```{r}
 ans <- flights[, .(arr_delay, dep_delay)]
@@ -266,40 +271,38 @@ head(ans)
 # ans <- flights[, list(arr_delay, dep_delay)]
 ```
 
-* Wrap both columns within `.()`, or `list()`. That's it.
+* Encadrer les deux colonnes avec `.()`, ou `list()`. C'est tout.
 
-#### -- Select both `arr_delay` and `dep_delay` columns *and* rename them to
-`delay_arr` and `delay_dep`.
+#### -- Sélectionner à la fois les colonnes `arr_delay` et `dep_delay` *et* les renommer en `delay_arr` et `delay_dep`.
 
-Since `.()` is just an alias for `list()`, we can name columns as we would while
-creating a `list`.
+Comme `.()` est juste un alias pour `list()`, nous pouvons donner un nom
+quelconque aux colonnes comme si on créait une `list`.
 
 ```{r}
 ans <- flights[, .(delay_arr = arr_delay, delay_dep = dep_delay)]
 head(ans)
 ```
 
-### e) Compute or *do* in `j`
+### e) Calcul ou *do* dans 'j'
 
-#### -- How many trips have had total delay < 0?
+#### -- Combien de voyages on eu un retard total < 0 ?
 
 ```{r}
 ans <- flights[, sum( (arr_delay + dep_delay) < 0 )]
 ans
 ```
 
-#### What's happening here?
+#### Que se passe-t-il dans ce cas ?
 
-* `data.table`'s `j` can handle more than just *selecting columns* - it can
-handle *expressions*, i.e., *computing on columns*. This shouldn't be
-surprising, as columns can be referred to as if they are variables. Then we
-should be able to *compute* by calling functions on those variables. And that's
-what precisely happens here.
+* `j` de `data.table` peut gérer davantage que simplement la *sélection de
+colonnes* - il peut gérer les *expressions*, comme *faire des calculs sur les
+colonnes*. Ilne faut pas s'en étonner, car les colonnes peuvent être référencées
+comme des variables. Puis nous devrions être capable de *calculer* en appelant
+des fonctions sur ces variables. Et c'est précisément ce qui se passe ici.
 
-### f) Subset in `i` *and* do in `j`
+### f) Sous-ensemble de `i` *et* do dans `j`
 
-#### -- Calculate the average arrival and departure delay for all flights with "JFK"
-as the origin airport in the month of June.
+#### -- Calculer le nombre moyen de retards des arrivées et des départs pour tous les vols au départ de l'aéroport "JFK" pendant le mois de juin.
 
 ```{r}
 ans <- flights[origin == "JFK" & month == 6L,
@@ -307,145 +310,151 @@ ans <- flights[origin == "JFK" & month == 6L,
 ans
 ```
 
-* We first subset in `i` to find matching *row indices* where `origin` airport
-equals `"JFK"`, and `month` equals `6L`. We *do not* subset the *entire*
-`data.table` corresponding to those rows *yet*.
-* Now, we look at `j` and find that it uses only *two columns*. And what we have
-to do is to compute their `mean()`. Therefore, we subset just those columns
-corresponding to the matching rows, and compute their `mean()`.
+* Nous extrayons un sous-ensemble de `i`  pour les *indices des lignes* où
+l'aéroport `origin` vaut `"JFK"`, et `month` vaut `6L`. *Cependant* nous *ne
+traitons pas* la `data.table` *entière* correspondant à ces lignes.
+* Maintenant, regardons `j` qui n'utilise que *deux colonnes*. Ce que nous devons
+faire c'est calculer leur `mean()`. C'est pourquoi, nous n'extrayons que ces
+deux colonnes pour les lignes qui correspondent et calculons leur `mean()`.
 
-Because the three main components of the query (`i`, `j` and `by`) are *together*
-inside `[...]`, `data.table` can see all three and optimise the query altogether
-*before evaluation*, rather than optimizing each separately. We are able to
-therefore avoid the entire subset (i.e., subsetting the columns *besides*
-`arr_delay` and `dep_delay`), for both speed and memory efficiency.
+Parce que les trois composants principaux de la requête (`i`, `j` et `by`)
+figurent *ensemble* dans `[...]`, `data.table` peut les voir tous trois et
+optimiser la requête dans sa totalité *avant l'évaluation*, plutôt que
+d'optimiser chacun séparément. Par conséquent nous pouvons éviter le
+sous-ensemble complet (par exemple trier les colonnes *annexes* `arr_delay` et
+`dep_delay`), pour la rapidité et l'efficacité de la mémoire.
 
-#### -- How many trips have been made in 2014 from "JFK" airport in the month of June?
+#### -- Combien de voyages ont été réalisés en 2014 au départ de l'aéroport "JFK" au mois de juin ?
 
 ```{r}
 ans <- flights[origin == "JFK" & month == 6L, length(dest)]
 ans
 ```
 
-The function `length()` requires an input argument. We just need to compute the
-number of rows in the subset. We could have used any other column as the input
-argument to `length()`. This approach is reminiscent of
-`SELECT COUNT(dest) FROM flights WHERE origin = 'JFK' AND month = 6` in SQL.
+La fonction `length()` nécessite un argument d'entrée. Il suffit juste de
+calculer le nombre de lignes du sous-ensemble. On aurait pu utiliser n'importe
+quelle colonne comme argument d'entrée de `length()`. Cette approche est une
+réminiscence de
+`SELECT COUNT(dest) FROM flights WHERE origin = 'JFK' AND month = 6` en SQL.
 
-This type of operation occurs quite frequently, especially while grouping (as we
-will see in the next section), to the point where `data.table` provides a
-*special symbol* `.N` for it.
+Ce type d'opération arrive assez fréquement, particulièrement lors des
+regroupements (comme nous le verrons dans la section suivante), au point que
+`data.table` fournit un *symbole spécial* `.N` pour cela.
 
-### g) Handle non-existing elements in `i`
+### g) Gérer les éléments absents dans `i`
 
-#### -- What happens when querying for non-existing elements?
+#### -- Que se passe-t-il quand on interroge des éléments non-existants ?
 
-When querying a `data.table` for elements that do not exist, the behavior differs
-based on the method used.
+Lorsque vous interrogez une `data.table` pour des éléments qui n'existent pas, le
+comportement dépend de la méthode utilisée.
 
-```{r}
+```r
 setkeyv(flights, "origin")
 ```
 
-* **Key-based subsetting: `dt["d"]`**
+* **Indicer en utilisant une clé : `dt["d"]`**
 
-   This performs a right join on the key column `x`, resulting in a row with `d`
-and `NA` for columns not found. When using `setkeyv`, the table is sorted by
-the specified keys and an internal index is created, enabling binary search for
-efficient subsetting.
-   ```{r}
+   Ceci réalise une jointure parfaite sur la colonne clé `x`, fournissant une
+rangée avec `d` et `NA` pour les colonnes absentes. En utilisant `setkeyv`, la
+table est triée en fonction des clés fournies et un index interne est créé,
+permettant une recherche binaire et des performances optimisées.
+   ```r
    flights["XYZ"]
-# Returns:
-#    origin year month day dep_time sched_dep_time dep_delay arr_time sched_arr_time arr_delay carrier flight tailnum ...
-# 1:    XYZ   NA    NA  NA       NA             NA        NA       NA             NA        NA      NA     NA      NA ...
+   # Returns:
+   #    origin year month day dep_time sched_dep_time dep_delay arr_time sched_arr_time arr_delay carrier flight tailnum ...
+   # 1:    XYZ   NA    NA  NA       NA             NA        NA       NA             NA        NA      NA     NA      NA ...
    ```
-* **Logical subsetting: `dt[x == "d"]`**
+* **Sous-ensemble logique : `dt[x == "d"]`**
 
-   This performs a standard subset operation that does not find any matching rows
-and thus returns an empty `data.table`.
-   ```{r}
-     flights[origin == "XYZ"]
-# Returns:
-# Empty data.table (0 rows and 19 cols): year,month,day,dep_time,sched_dep_time,dep_delay,arr_time,sched_arr_time,arr_delay,...
+   Ceci réalise une opération standard de sous-ensemble qui ne trouve aucune
+correspondance de lignes et donc renvoie une `data.table` vide.
+   ```r
+      flights[origin == "XYZ"]
+   # Returns:
+   # Empty data.table (0 rows and 19 cols): year,month,day,dep_time,sched_dep_time,dep_delay,arr_time,sched_arr_time,arr_delay,...
    ```
-* **Exact match using `nomatch=NULL`**
+* **Correspondance exacte en utilisant `nomatch=NULL`**
 
-   For exact matches without `NA` for non-existing elements, use `nomatch=NULL`:
-   ```{r}
+   Pour une correspondance stricte sans `NA` pour les éléments absents, utiliser
+`nomatch=NULL` :
+   ```r
    flights["XYZ", nomatch=NULL]
-# Returns:
-# Empty data.table (0 rows and 19 cols): year,month,day,dep_time,sched_dep_time,dep_delay,arr_time,sched_arr_time,arr_delay,...
+   # Returns:
+   # Empty data.table (0 rows and 19 cols): year,month,day,dep_time,sched_dep_time,dep_delay,arr_time,sched_arr_time,arr_delay,...
    ```
 
-Understanding these behaviors can help prevent confusion when dealing with
-non-existing elements in your data.
+En assimilant ces comportements, cela vous ôtera toute confusion lorsque vous
+trouverez des éléments absents parmi vos données.
 
-#### Special symbol `.N`: {#special-N}
+#### Symbol spécial `.N`: {#special-N}
 
-`.N` is a special built-in variable that holds the number of observations *in the
-current group*. It is particularly useful when combined with `by` as we'll see
-in the next section. In the absence of group by operations, it simply returns
-the number of rows in the subset.
+`.N` est une variable interne spéciale qui contient le nombre d'observations
+*dans le groupe actuel*. Elle est particulièrement utile combinée avec `by`
+comme nous le verrons dans la prochaine section. S'il n'y a pas de groupe pour
+les opérations, le nombre de lignes dans le sous-ensemble sera simplement
+renvoyé.
 
-Now that we now, we can now accomplish the same task by using `.N` as follows:
+Maintenant que nous savons, nous pouvons accomplir la même tâche en utilisant
+`.N` ainsi :
 
 ```{r}
 ans <- flights[origin == "JFK" & month == 6L, .N]
 ans
 ```
 
-* Once again, we subset in `i` to get the *row indices* where `origin` airport
-equals *"JFK"*, and `month` equals *6*.
-* We see that `j` uses only `.N` and no other columns. Therefore, the entire
-subset is not materialised. We simply return the number of rows in the subset
-(which is just the length of row indices).
-* Note that we did not wrap `.N` with `list()` or `.()`. Therefore, a vector is
-returned.
+* Une fois de plus, nous extrayons un sous-ensemble de `i` avec les *indices de
+ligne* où les aéoroports `origin` valent *"JFK"*, et `month` vaut *6*.
+* Nous voyons que `j` utilise `.N` uniquement et pas d'autres colonnnes. C'est
+pourquoi le sous-ensemble complet n'est pas matérialisé. Nous renvoyons
+seulement le nombre de lignes du sous-ensemble (qui est simplement la longueur
+des indices de lignes).
+* Notez que nous n'avons pas encadré `.N` avec `list()` ni `.()`. C'est pourquoi
+un vecteur est renvoyé.
 
-We could have accomplished the same operation by doing
-`nrow(flights[origin == "JFK" & month == 6L])`. However, it would have to subset
-the entire `data.table` first corresponding to the *row indices* in `i` *and
-then* return the rows using `nrow()`, which is unnecessary and inefficient. We
-will cover this and other optimisation aspects in detail under the *`data.table`
-design* vignette.
+On aurait pu faire la même opération en écrivant
+`nrow(flights[origin == "JFK" & month == 6L])`. Néanmoins il aurait fallu
+d'abord dissocier la `data.table` entière  en fonction des *indices de lignes*
+dans `i` *puis* renvoyer les lignes en utilisant `nrow()`, ce qui est inutile et
+pas efficace. Nous aborderons en détails ce sujet et d'autres aspects de
+l'optimisation dans la vignette *architecture de `data.table`*.
 
-### h) Great! But how can I refer to columns by names in `j` (like in a
-`data.frame`)? {#refer_j}
+### h) Super !  Mais comment référencer les colonnes par nom dans `j` (comme avec un `data.frame`) ? {#refer_j}
 
-If you're writing out the column names explicitly, there's no difference compared
-to a `data.frame` (since v1.9.8).
+Si vous imprimez le nom des colonnes explicitement, il n'y a pas de différence
+avec un `data.frame` (depuis v1.9.8).
 
-#### -- Select both `arr_delay` and `dep_delay` columns the `data.frame` way.
+#### -- Sélectionner simultanément les colonnes `arr_delay` et `dep_delay` à la manière d'un `data.frame`.
 
 ```{r j_cols_no_with}
 ans <- flights[, c("arr_delay", "dep_delay")]
 head(ans)
 ```
 
-If you've stored the desired columns in a character vector, there are two
-options: Using the `..` prefix, or using the `with` argument.
+Si vous avez stocké les colonnes souhaitées dans un vecteur de caractères, il y a
+deux options : utiliser le préfixe `..` , ou utiliser l'argument `with`.
 
-#### -- Select columns named in a variable using the `..` prefix
+#### -- Sélectionnez les colonnes nommées dans une variable en utilisant le préfixe `..`
 
-```{r  j_cols_dot_prefix}
+```{r j_cols_dot_prefix}
 select_cols = c("arr_delay", "dep_delay")
 flights[ , ..select_cols]
 ```
 
-For those familiar with the Unix terminal, the `..` prefix should be reminiscent
-of the "up-one-level" command, which is analogous to what's happening here --
-the `..` signals to `data.table` to look for the `select_cols` variable
-"up-one-level", i.e., within the global environment in this case.
+Pour les habitués du terminal Unix, le préfixe `..` devrait rappeler la commande
+de "remontée d'un niveau", qui est analogue à ce qui se passe ici -- le `..`
+demande à `data.table` de chercher la variable `select_cols` "un nivau
+au-dessus",  c'est à  dire dans ce cas, dans l'envronnement global.
 
-#### -- Select columns named in a variable using `with = FALSE`
+#### -- Sélectionner les colonnes nommées dans une variable en utilisant `with = FALSE`
 
-```{r
+```{r j_cols_with}
 flights[ , select_cols, with = FALSE]
 ```
 
-The argument is named `with` after the R function `with()` because of similar
-functionality. Suppose you have a `data.frame` `DF` and you'd like to subset all
-rows where `x > 1`. In `base` R you can do the following:
+L'argument s'appelle `with` d'après la fonction R `with()` à cause de la
+fonctionnalité similaire. Supposez que vous ayiez une `data.frame` `DF` et que
+vous vouliez dissocier toutes les lignes où `x > 1`. Dans la `base` R vous
+pouvez écrire :
 
 ```{r}
 DF = data.frame(x = c(1,1,1,2,2,3,3,3), y = 1:8)
@@ -457,49 +466,53 @@ DF[DF$x > 1, ] # data.frame needs that ',' as well
 DF[with(DF, x > 1), ]
 ```
 
-* Using `with()` in (2) allows using `DF`'s column `x` as if it were a variable.
+* Utiliser `with()` dans (2) permet d'utiliser la colonne `x` de `DF` comme s'il
+s'agissait d'une variable.
 
-   Hence, the argument name `with` in `data.table`. Setting `with = FALSE`
-disables the ability to refer to columns as if they are variables, thereby
-restoring the "`data.frame` mode".
-* We can also *deselect* columns using `-` or `!`. For example:
+   De là le nom d'argument `with` dans `data.table`. En définissant `with = FALSE`
+on désactive la possibilité de référencer les colonnes comme s'il s'agissait
+de variables, ce qui rétablit le mode "`data.frame`".
+* Il est ausi possible de *désélectionner* des colonnes en utilisant `-` ou `!`.
+Par exemple :
    ```{r eval = FALSE}
    ## not run
 
-# returns all columns except arr_delay and dep_delay
-ans <- flights[, !c("arr_delay", "dep_delay")]
-# or
-ans <- flights[, -c("arr_delay", "dep_delay")]
+   # returns all columns except arr_delay and dep_delay
+   ans <- flights[, !c("arr_delay", "dep_delay")]
+   # or
+   ans <- flights[, -c("arr_delay", "dep_delay")]
    ```
-* From `v1.9.5+`, we can also select by specifying start and end column names,
-e.g., `year:day` to select the first three columns.
+* A partir de `v1.9.5+`, la sélection est aussi possible en fournissant le nom
+des colonnes de début et de fin, par exemple `year:day` pour sélectionner les
+trois premières colonnes.
    ```{r eval = FALSE}
    ## not run
 
-# returns year,month and day
-ans <- flights[, year:day]
-# returns day, month and year
-ans <- flights[, day:year]
-# returns all columns except year, month and day
-ans <- flights[, -(year:day)]
-ans <- flights[, !(year:day)]
+   # returns year,month and day
+   ans <- flights[, year:day]
+   # returns day, month and year
+   ans <- flights[, day:year]
+   # returns all columns except year, month and day
+   ans <- flights[, -(year:day)]
+   ans <- flights[, !(year:day)]
    ```
 
-   This is particularly handy while working interactively.
+   Ceci est très pratique lorsque vous travaillez de manière interactive.
 
-`with = TRUE` is the default in `data.table` because we can do much more by
-allowing `j` to handle expressions - especially when combined with `by`, as
-we'll see in a moment.
+`with = TRUE` est la valeur par défaut dans `data.table` car nous pouvons faire
+plus en permettant à `j` de gérer des expressions - particulièrement en
+combinant avec `by`, comme nous le verrons dans un instant.
 
-## 2. Aggregations
+## 2. Aggrégations
 
-We've already seen `i` and `j` from `data.table`'s general form in the previous
-section. In this section, we'll see how they can be combined together with `by`
-to perform operations *by group*. Let's look at some examples.
+Nous avons déjà vu `i` et `j` dans la forme générale d'une `data.table` dans la
+secton précédente. Dans cette section, nous allons voir comment ils peuvent être
+combinés ensemble avec `by` pour réaliser des opérations *par groupe*. Voyons
+quelques exemples.
 
-### a) Grouping using `by`
+### a) Regrouper avec `by`
 
-#### -- How can we get the number of trips corresponding to each origin airport?
+#### -- Comment obtenir le nombre de voyages au départ de chaque aéroport ?
 
 ```{r}
 ans <- flights[, .(.N), by = .(origin)]
@@ -509,44 +522,46 @@ ans
 # ans <- flights[, .(.N), by = "origin"]
 ```
 
-* We know `.N` [is a special variable](#special-N) that holds the number of rows
-in the current group. Grouping by `origin` obtains the number of rows, `.N`,
-for each group.
-* By doing `head(flights)` you can see that the origin airports occur in the
-order *"JFK"*, *"LGA"*, and *"EWR"*. The original order of grouping variables
-is preserved in the result. *This is important to keep in mind!*
-* Since we did not provide a name for the column returned in `j`, it was named
-`N` automatically by recognising the special symbol `.N`.
-* `by` also accepts a character vector of column names. This is particularly
-useful for coding programmatically, e.g., designing a function with the
-grouping columns (in the form of a `character` vector) as a function argument.
-* When there's only one column or expression to refer to in `j` and `by`, we can
-drop the `.()` notation. This is purely for convenience. We could instead do:
+* Nous savons que `.N` [est une variable spéciale](#special-N) qui contient le
+nombre de lignes du groupe actuel. Si on regroupe par `origin` on obtient le
+nombre de lignes `.N`, pour chaque groupe.
+* En écrivant `head(flights)` vous voyez que les aéroports de départ apparaissent
+dans l'ordre *"JFK"*, *"LGA"*, et *"EWR"*. L'ordre original de regroupement
+des variables est préservé dans le résultat. *C'est important d'avoir cela à
+l'esprit !*
+* Comme nous n'avons pas fourni de nom pour la colonne renvoyée de `j`, elle a
+été nommée `N` automatiquement car le symbole spécial `.N` a été reconnu.
+* `by` accepte également un vecteur de caractères de noms de colonnes. C'est
+particulièrement utile pour le logiciel, par exemple lorsque l'on définit une
+fonction avec des colonnes de regroupement (sour la  forme d'un vecteur de
+`character`) comme argument de fonction.
+* Quand on ne se réfère qu'à une colonne ou une expression dans `j` et `by`, on
+peut omettre la notation `.()` . C'est une facilité. Nous aurions pu écrire à
+la place :
    ```{r}
    ans <- flights[, .N, by = origin]
-ans
+   ans
    ```
 
-   We'll use this convenient form wherever applicable hereafter.
+   Cette forme pratique sera ensuite utilisée par la suite là où nécessaire.
 
-#### -- How can we calculate the number of trips for each origin airport for carrier
-code `"AA"`? {#origin-.N}
+#### -- Comment calculer le nombre de voyages au départ de chaque aéroport pour le transporteur ayant le code `"AA"`? {#origin-.N}
 
-The unique carrier code `"AA"` corresponds to *American Airlines Inc.*
+Le code unique de transporteur `"AA"` correspond à *American Airlines Inc.*
 
 ```{r}
 ans <- flights[carrier == "AA", .N, by = origin]
 ans
 ```
 
-* We first obtain the row indices for the expression `carrier == "AA"` from `i`.
-* Using those *row indices*, we obtain the number of rows while grouped by
-`origin`. Once again no columns are actually materialised here, because the
-`j-expression` does not require any columns to be actually subsetted and is
-therefore fast and memory efficient.
+* Nous obtenons d'abord les indices des lignes pour l'expression
+`carrier == "AA"` à partir de `i`.
+* En  utilisant ces *indices de lignes*, nous obtenons le nombre de lignes
+groupées par `origin`. Une fois de plus, aucune colonne n'est actuellement
+matérialisée ici, parce que la `j-expression` nécessite aucun tri de colonne
+d'où la rapidité et l'efficacité mémoire.
 
-#### -- How can we get the total number of trips for each `origin, dest` pair for
-carrier code `"AA"`? {#origin-dest-.N}
+#### -- Comment obtenir le nombre total de voyages pour chaque paire `origin, dest` du transporteur ayant pour code `"AA"`? {#origin-dest-.N}
 
 ```{r}
 ans <- flights[carrier == "AA", .N, by = .(origin, dest)]
@@ -556,13 +571,13 @@ head(ans)
 # ans <- flights[carrier == "AA", .N, by = c("origin", "dest")]
 ```
 
-* `by` accepts multiple columns. We just provide all the columns by which to
-group by. Note the use of `.()` again in `by` -- again, this is just shorthand
-for `list()`, and `list()` can be used here as well. Again, we'll stick with
-`.()` in this vignette.
+* `by` accepte plusieurs colonnes. Nous fournissons simplement toutes les
+colonnes qui servent au groupement. Notez l'utilisation à nouveau de `.()`
+dans `by` -- encore une fois, il s'agit d'un raccourci pour `list()`, mais
+`list()` peut également être utilisé. A nouveau, nous garderons `.()` dans cette
+this vignette.
 
-#### -- How can we get the average arrival and departure delay for each `orig,dest`
-pair for each month for carrier code `"AA"`? {#origin-dest-month}
+#### -- Comment obtenir les valeurs moyennes menselles du retard des arrivées et des départs pour chaque paire `orig,dest` pour le transporteur ayant le code `"AA"`? {#origin-dest-month}
 
 ```{r}
 ans <- flights[carrier == "AA",
@@ -571,21 +586,22 @@ ans <- flights[carrier == "AA",
 ans
 ```
 
-* Since we did not provide column names for the expressions in `j`, they were
-automatically generated as `V1` and `V2`.
-* Once again, note that the input order of grouping columns is preserved in the
-result.
+* Comme nous n'avons pas fourni le nom des colonnes pour les expressions dans
+`j`, ils ont été automatiquement générés en tant que `V1` et `V2`.
+* Une fois de plus, notez que l'ordre d'entrée du roupement des colonnes est
+préservé dans le résultat.
 
-Now what if we would like to order the result by those grouping columns `origin`,
-`dest` and `month`?
+Maintenant qu'adviendrait-il si nous voulions trier les résultats en groupant les
+colonnes `origin`, `dest` et `month` ?
 
-### b) Sorted `by`: `keyby`
+### b) Tri `by` : `keyby`
 
-`data.table` retaining the original order of groups is intentional and by design.
-There are cases when preserving the original order is essential. But at times we
-would like to automatically sort by the variables in our grouping.
+`data.table` conserve l'ordre original des groupes; c'est intentionnel et défini
+à la conception. Il existe des cas où conserver l'ordre original est essentiel.
+Mais à certains moments, nous aimerions trier automatiquement par variables dans
+notre regroupement.
 
-#### -- So how can we directly order by all the grouping variables?
+#### -- Donc comment pourrions-nous trier directement sur toutes les variables de regroupement ?
 
 ```{r}
 ans <- flights[carrier == "AA",
@@ -594,58 +610,59 @@ ans <- flights[carrier == "AA",
 ans
 ```
 
-* All we did was change `by` to `keyby`. This automatically orders the result by
-the grouping variables in increasing order. In fact, due to the internal
-implementation of `by` first requiring a sort before recovering the original
-table's order, `keyby` is typically faster than `by` because it doesn't require
-this second step.
+* Tout ce que nous avons fait c'est de changer `by` en `keyby`. Ceci trie
+automatiquement le résultat en fonction des variables de groupement, dans
+l'ordre croissant. En fait, à cause de l'implémentation interne de `by` qui
+demande d'abord un tri avant de récupérer l'ordre initial du tableau, `keyby`
+est typiquement plus rapide que `by` car l ne nécessite pas cette seconde étape.
 
-**Keys:** Actually `keyby` does a little more than *just ordering*. It also *sets
-a key* after ordering by setting an `attribute` called `sorted`.
+**Clés :** actuellement `keyby` en fait un peu plus que *simplement trier*. Il
+*définit une clé* également après le tri en initialisant un `attribute` appelé
+`sorted`.
 
-We'll learn more about `keys` in the *Keys and fast binary search based subset*
-vignette; for now, all you have to know is that you can use `keyby` to
-automatically order the result by the columns specified in `by`.
+Nous en apprendrons plus au sujet des `clés` dans la vignette *Clés et
+sous-ensembles basés sur la recherche binaire rapide*; pour l'instant, tout ce
+que vous devez savoir est que vous pouvez utiliser `keyby` pour trier
+automatiquement le résultat selon les colonnes spécifiées dans `by`.
 
-### c) Chaining
+### c) Chaînage
 
-Let's reconsider the task of [getting the total number of trips for each
-`origin, dest` pair for carrier *"AA"*](#origin-dest-.N).
+Considérons la tâche consistant à [récupérer le nombre total de voyages pour
+chaque couple `origin, dest` du transporteur *"AA"*](#origin-dest-.N).
 
 ```{r}
 ans <- flights[carrier == "AA", .N, by = .(origin, dest)]
 ```
 
-#### -- How can we order `ans` using the columns `origin` in ascending order, and
-`dest` in descending order?
+#### -- Comment trier `ans` en utilisant la colonne `origin` en mode croissant, et la colonne `dest` en mode décroissant ?
 
-We can store the intermediate result in a variable, and then use
-`order(origin, -dest)` on that variable. It seems fairly straightforward.
+On peut stocker le résultat intermédiaire dans une variable, puis passer
+`order(origin, -dest)` sur cette variable. Cela semble plus direct.
 
 ```{r}
 ans <- ans[order(origin, -dest)]
 head(ans)
 ```
 
-* Recall that we can use `-` on a `character` column in `order()` within the
-frame of a `data.table`. This is possible due to `data.table`'s internal query
-optimisation.
-* Also recall that `order(...)` with the frame of a `data.table` is
-*automatically optimised* to use `data.table`'s internal fast radix order
-`forder()` for speed.
+* Souvenez-vous que nous pouvons utiliser `-` avec une colonne `character` dans
+`order()` sur la structure d'une `data.table`. Ceci est possible grâce à
+l'optimisation interne des requêtes dans `data.table` .
+* Souvenez-vous aussi que `order(...)` avec la structure d'une `data.table` est
+*optimisé automatiquement* pour utiliser l'ordre interne fast radix `forder()`
+de `data.table` qui est très rapide.
 
-But this requires having to assign the intermediate result and then overwriting
-that result. We can do one better and avoid this intermediate assignment to a
-temporary variable altogether by *chaining* expressions.
+Mais ceci nécessite d'avoir assigné le résultat intermédiaire et de réécrire ce
+résultat. On peut faire mieux et éviter cette assignation intermédiaire à une
+variable temporaire en *chaînant* les expressions ensemble.
 
 ```{r}
 ans <- flights[carrier == "AA", .N, by = .(origin, dest)][order(origin, -dest)]
 head(ans, 10)
 ```
 
-* We can tack expressions one after another, *forming a chain* of operations,
-i.e., `DT[ ... ][ ... ][ ... ]`.
-* Or you can also chain them vertically:
+* Il est possible de concaténer des expressions à la suite, de sorte à *former
+une chaîne* d'opérations, comme par exemple, `DT[ ... ][ ... ][ ... ]`.
+* Ou vous pouvez aussi les chaîner verticalement :
    ```{r eval = FALSE}
    DT[ ...
    ][ ...
@@ -653,55 +670,59 @@ i.e., `DT[ ... ][ ... ][ ... ]`.
        ]
    ```
 
-### d) Expressions in `by`
+### d) Expressions de `by`
 
-#### -- Can `by` accept *expressions* as well or does it just take columns?
+#### -- `by` accepte-t-il également *expressions*, ou simplement des colonnes ?
 
-Yes it does. As an example, if we would like to find out how many flights started
-late but arrived early (or on time), started and arrived late etc...
+Oui, il le fait. Par exemple, si nous avions voulu chercher combien de vols sont
+partis en retard mais sont arrivés plus tôt (ou à l'heure), ou parts à l'heure
+mais arrivés en retard, etc...
 
 ```{r}
 ans <- flights[, .N, .(dep_delay>0, arr_delay>0)]
 ans
 ```
 
-* The last row corresponds to `dep_delay > 0 = TRUE` and `arr_delay > 0 = FALSE`.
-We can see that
+* La dernière ligne correspond à `dep_delay > 0 = TRUE` et
+`arr_delay > 0 = FALSE`. Nous voyons que
 `r flights[!is.na(arr_delay) & !is.na(dep_delay), .N, .(dep_delay>0, arr_delay>0)][, N[4L]]`
-flights started late but arrived early (or on time).
-* Note that we did not provide any names to `by-expression`. Therefore, names
-have been automatically assigned in the result. As with `j`, you can name
-these expressions as you would for elements of any `list`, like for e.g.
+vols sont partis en retard mais sont arrivés plus tôt (ou à l'heure).
+* Notez que nous n'avons fourni aucun nom à `by-expression`. C'est pourquoi des
+noms ont été assignés automatiquement dans le résultat. Comme avec `j`, vous
+pouvez nommer ces expressions comme vous le feriez pour des éléments de
+n'importe quelle `list`, comme par exemple
 `DT[, .N, .(dep_delayed = dep_delay>0, arr_delayed = arr_delay>0)]`.
-* You can provide other columns along with expressions, for example:
+* Vous pouvez fournir d'autres colonnes avec des expressions, par exemple:
 `DT[, .N, by = .(a, b>0)]`.
 
-### e) Multiple columns in `j` - `.SD`
+### e) Colonnes multiples dans `j` - `.SD`
 
-#### -- Do we have to compute `mean()` for each column individually?
+#### -- Faut-il calculer `mean()` pour chaque colonne individuellement ?
 
-It is of course not practical to have to type `mean(myCol)` for every column one
-by one. What if you had 100 columns to average `mean()`?
+Bien sûr il n'est pas pratique de devoir entrer `mean(myCol)` pour chaque
+colonne, une par une. Et s'il fallait faire la moyenne `mean()` sur 100
+colonnes ?
 
-How can we do this efficiently and concisely? To get there, refresh on [this
-tip](#tip-1) - *"As long as the `j`-expression returns a `list`, each element of
-the `list` will be converted to a column in the resulting `data.table`"*. If we
-can refer to the *data subset for each group* as a variable *while grouping*, we
-can then loop through all the columns of that variable using the already- or
-soon-to-be-familiar base function `lapply()`. No new names to learn specific to
-`data.table`.
+Comment faire cela de manière efficace et concise ?  Pour y arriver, relisons [ce
+conseil](#tip-1) - *"Tant que la `j`-expression renvoie une `list`, chaque
+élément de cette `list` sera converti en une colonne de la `data.table`
+résultat"*. Si nous pouvons adresser le *sous-ensemble de données de chaque
+groupe* comme une variable *de regroupement*, nous pourrons ensuite boucler sur
+toutes les colonnes de cette variables en utilisant la fonction de base
+familière (ou en passe de le devenir) `lapply()`. Il n'y a pas de nouveaux noms
+à apprendre particuliers pour `data.table`.
 
-#### Special symbol `.SD`: {#special-SD}
+#### Symbole spécial `.SD` : {#special-SD}
 
-`data.table` provides a *special* symbol called `.SD`. It stands for **S**ubset
-of **D**ata. It by itself is a `data.table` that holds the data for *the current
-group* defined using `by`.
+`data.table` fournit le symbole *spécial* `.SD`. Il tire son nom de
+**S**ous-ensemble de **D**onnées. C'est une `data.table` qui contient les
+données du *groupe actuel* tel qu'il a été défini avec `by`.
 
-Recall that a `data.table` is internally a `list` as well with all its columns of
-equal length.
+Souvenez-vous qu'une `data.table` est représentée en interne comme une `list`
+dont toutes les colonnes ont la même longueur.
 
-Let's use the [`data.table` `DT` from before](#what-is-datatable-1a) to get a
-glimpse of what `.SD` looks like.
+Utilisons la [`data.table` `DT` précédente](#what-is-datatable-1a) pour avoir un
+aperçu de ce à quoi ressemble `.SD` .
 
 ```{r}
 DT
@@ -709,45 +730,46 @@ DT
 DT[, print(.SD), by = ID]
 ```
 
-* `.SD` contains all the columns *except the grouping columns* by default.
-* It is also generated by preserving the original order - data corresponding to
-`ID = "b"`, then `ID = "a"`, and then `ID = "c"`.
+* `.SD` contient pas défaut toutes les colonnes *sauf les colonnes regroupées*.
+* La génération se fait aussi en préservant l'ordre original - données
+correspondant à `ID = "b"`, puis `ID = "a"`, et enfin `ID = "c"`.
 
-To compute on (multiple) columns, we can then simply use the base R function
-`lapply()`.
+Pour calculer sur uneou plusieurs colonnes vous pouvez utiliser simplement la
+fonction de base R `lapply()`.
 
 ```{r}
 DT[, lapply(.SD, mean), by = ID]
 ```
 
-* `.SD` holds the rows corresponding to columns `a`, `b` and `c` for that group.
-We compute the `mean()` on each of these columns using the already-familiar
-base function `lapply()`.
-* Each group returns a list of three elements containing the mean value which
-will become the columns of the resulting `data.table`.
-* Since `lapply()` returns a `list`, so there is no need to wrap it with an
-additional `.()` (if necessary, refer to [this tip](#tip-1)).
+* `.SD` contient les lignes correspondant aux colonnnes `a`, `b` et `c` pour ce
+groupe. Nous calculons la `mean()` sur chacune de ces colonnes en utilisant la
+fonction de base déjà familière `lapply()`.
+* Chaque groupe renvoie une liste de trois éléments qui contiennent la valeur
+moyenne qui deviendront les colonnes du résultat `data.table`.
+* Il n'est pas utile d'encadrer `lapply()` avec `.()` car il renvoie déjà une
+`list` (si nécessaire voir [ce conseil](#tip-1)).
 
-We are almost there. There is one little thing left to address. In our `flights`
-`data.table`, we only wanted to calculate the `mean()` of the two columns
-`arr_delay` and `dep_delay`. But `.SD` would contain all the columns other than
-the grouping variables by default.
+Nous y sommes presque. Il reste encore une petite chose à régler. Dans notre
+`data.table` `flights` , nous avons voulu calculer seulement la `mean()` des
+deux colonnes `arr_delay` et `dep_delay`. Mais `.SD` contiendrait par défaut
+toutes les colonnes autres que les variables de groupement.
 
-#### -- How can we specify just the columns we would like to compute the `mean()` on?
+#### -- Comment spécifier uniquement les colonnes sur lesquelles nous voulons appliquer `mean()` ?
 
 #### .SDcols
 
-Using the argument `.SDcols`. It accepts either column names or column indices.
-For example, `.SDcols = c("arr_delay", "dep_delay")` ensures that `.SD` contains
-only these two columns for each group.
+En utilisant l'argument `.SDcols`. Il accepte soit des noms soit des indices de
+colonnes. Par exemple, `.SDcols = c("arr_delay", "dep_delay")` permet que `.SD`
+ne comporte que ces deux colonnes pour chaque groupe.
 
-Similar to [part g)](#refer_j), you can also specify the columns to remove
-instead of columns to keep using `-` or `!`. Additionally, you can select
-consecutive columns as `colA:colB` and deselect them as `!(colA:colB)` or
-`-(colA:colB)`.
+De la même manière que [part g)](#refer_j), vous pouvez également spécifier les
+colonnes à supprimer au lieu des colonnes à garder en utilisant le `-` ou `!`.
+De plus, vous pouvez sélectionner des colonnes consécutives avec `colA:colB` et
+les désélectionner avec `!(colA:colB)` ou `-(colA:colB)`.
 
-Now let us try to use `.SD` along with `.SDcols` to get the `mean()` of
-`arr_delay` and `dep_delay` columns grouped by `origin`, `dest` and `month`.
+Maintenant essayons d'utiliser `.SD` avec `.SDcols` pour obtenir la moyenne
+`mean()` des colonnes `arr_delay` et `dep_delay` groupées par `origin`, `dest`
+et `month`.
 
 ```{r}
 flights[carrier == "AA",                       ## Only on trips with carrier "AA"
@@ -756,55 +778,59 @@ flights[carrier == "AA",                       ## Only on trips with carrier "AA
         .SDcols = c("arr_delay", "dep_delay")] ## for just those specified in .SDcols
 ```
 
-### f) Subset `.SD` for each group:
+### f) Extraire `.SD` pour chaque groupe :
 
-#### -- How can we return the first two rows for each `month`?
+#### -- Comment renvoyer les deux premières lignes de chque 'month`?
 
 ```{r}
 ans <- flights[, head(.SD, 2), by = month]
 head(ans)
 ```
 
-* `.SD` is a `data.table` that holds all the rows for *that group*. We simply
-subset the first two rows as we have seen [here](#subset-rows-integer) already.
-* For each group, `head(.SD, 2)` returns the first two rows as a `data.table`,
-which is also a `list`, so we do not have to wrap it with `.()`.
+* `.SD` est une `data.table` qui contient toutes les lignes pour *ce groupe*.
+Nous dissocions simplement les deux premières lignes comme nous l'avons déjà
+vu [ici](#subset-rows-integer).
+* Pour chaque groupe, `head(.SD, 2)` renvoie les deux premières lignes en tant
+que `data.table`, qui est aussi une `list`, il n'est donc pas nécessaire de
+l'encadrer avec `.()`.
 
-### g) Why keep `j` so flexible?
+### g) Pourquoi garder `j` si flexible ?
 
-So that we have a consistent syntax and keep using already existing (and
-familiar) base functions instead of learning new functions. To illustrate, let
-us use the `data.table` `DT` that we created at the very beginning under the
-section [What is a data.table?](#what-is-datatable-1a).
+Ainsi nous avons une syntaxe cohérente et continuons l'utilisation de fonctions
+de base déja existantes (et familières) au lieu d'apprendre de nouvelles
+fonctions. Pour illustrer cela utilisons la `data.table` `DT` que nous avons
+créée tout au début dans la section [Qu'est-ce qu'une
+data.table ?](#what-is-datatable-1a).
 
-#### -- How can we concatenate columns `a` and `b` for each group in `ID`?
+#### -- Comment concaténer les colonnes `a` et `b` pour chaque groupe de `ID` ?
 
 ```{r}
 DT[, .(val = c(a,b)), by = ID]
 ```
 
-* That's it. There is no special syntax required. All we need to know is the base
-function `c()` which concatenates vectors and [the tip from before](#tip-1).
+* C'est tout. Aucune syntaxe particulière n'est requise. Tout ce dont nous avons
+besoin de connaître est la fonction de base `c()` qui concatène les vecteurs
+et [la recommendation précédente](#tip-1).
 
-#### -- What if we would like to have all the values of column `a` and `b`
-concatenated, but returned as a list column?
+#### -- Que se passerait-il si nous voulions avoir toutes les valeurs des colonnes `a` et `b` concaténées, mais renvoyées en tant que colonne de liste ?
 
 ```{r}
 DT[, .(val = list(c(a,b))), by = ID]
 ```
 
-* Here, we first concatenate the values with `c(a,b)` for each group, and wrap
-that with `list()`. So for each group, we return a list of all concatenated
-values.
-* Note that those commas are for display only. A list column can contain any
-object in each cell, and in this example, each cell is itself a vector and
-some cells contain longer vectors than others.
+* Ici, nous concaténons d'abord les valeurs avec `c(a,b)` pour chaque groupe, et
+que nous encadrons avec `list()`. Donc pour chaque groupe, nous renvoyons une
+liste de toutes les valeurs concaténées.
+* Notez que ces virgules ne servent qu'à l'affichage. Une colonne qui est une
+liste peut contenir dans chaque cellule n'importe quel objet, et dans cet
+exemple chaque cellule est elle-même un vecteur et certaines cellules
+contiennent des vecteurs plus longs que d'autres.
 
-Once you start internalising usage in `j`, you will realise how powerful the
-syntax can be. A very useful way to understand it is by playing around, with the
-help of `print()`.
+Une fois que vous commencerez à utiliser `j`, vous découvrirez la puissance de sa
+syntaxe. Une manière pratique de l'aborder est de la tester en utilisant
+`print()`.
 
-For example:
+Par exemple :
 
 ```{r}
 ## look at the difference between
@@ -814,66 +840,74 @@ DT[, print(c(a,b)), by = ID] # (1)
 DT[, print(list(c(a,b))), by = ID] # (2)
 ```
 
-In (1), for each group, a vector is returned, with length = 6,4,2 here. However,
-(2) returns a list of length 1 for each group, with its first element holding
-vectors of length 6,4,2. Therefore, (1) results in a length of `6+4+2 =`r
-6+4+2``, whereas (2) returns `1+1+1=`r 1+1+1``.
+Dans (1), pour chaque groupe, un vecteur est renvoyé, de longueur = 6,4,2 ici.
+Néanmoins, (2) renvoie une liste de longueur 1 pour chaque groupe, dont chaque
+premier élément contient des vecteurs de longueur 6,4,2. C'est pourquoi, (1) a
+pour longueur totale `6+4+2 =`r 6+4+2``, alors que (2) renvoie `1+1+1=`r 1+1+1``.
 
-## Summary
+## Résumé
 
-The general form of `data.table` syntax is:
+La forme générale de la syntaxe de `data.table` est :
 
-```{r  eval = FALSE}
+```{r eval = FALSE}
 DT[i, j, by]
 ```
 
-We have seen so far that,
+Jusqu'ici nous avons vu que,
 
-#### Using `i`:
+#### En utilisant 'i' :
 
-* We can subset rows similar to a `data.frame`- except you don't have to use
-`DT$` repetitively since columns within the frame of a `data.table` are seen
-as if they are *variables*.
-* We can also sort a `data.table` using `order()`, which internally uses
-data.table's fast order for better performance.
+* On peut extraire des lignes de manière similaire à une `data.frame`- sauf que
+vous ne devez pas utiliser `DT$` de manière répétitive car les colonnes dans
+la structure d'une `data.table` sont vues comme s'il s'agissait de *variables*.
+* Nous pouvons aussi trier une `data.table` avec `order()`, qui utilise en
+interne l'ordonnancement rapide de data.table pour de meilleures performances.
 
-We can do much more in `i` by keying a `data.table`, which allows for blazing
-fast subsets and joins. We will see this in the *"Keys and fast binary search
-based subsets"* and *"Joins and rolling joins"* vignette.
+Nous pouvons faire beaucoup plus dans `i` en créant une `data.table` avec clés,
+ce qui permet de réaliser rapidement les sous-ensembles et les jointures. Nous
+verrons cela dans les vignettes *"Clés et sous-ensembles basés sur la recherche
+binaire rapide"* et *"Jointures et jointures liées au temps"*.
 
-#### Using `j`:
+#### En utilisant 'j' :
 
-1. Select columns the `data.table` way: `DT[, .(colA, colB)]`.
-1. Select columns the `data.frame` way: `DT[, c("colA", "colB")]`.
-1. Compute on columns: `DT[, .(sum(colA), mean(colB))]`.
-1. Provide names if necessary: `DT[, .(sA =sum(colA), mB = mean(colB))]`.
-1. Combine with `i`: `DT[colA > value, sum(colB)]`.
+1. Sélectionner les colonnes à la manière `data.frame` :
+`DT[, c("colA", "colB")]`.
+1. Sélectionner les colonnes à la manière `data.frame` :
+`DT[, c("colA", "colB")]`.
+1. Evaluer sur les colonnes : 'DT[, .(sum(colA), mean(colB))]'.
+1. Fournir les noms si nécessaire : 'DT[, .(sA =sum(colA), mB = mean(colB))]'.
+1. Combiner avec 'i' : 'DT[colA > value, sum(colB)]'.
 
-#### Using `by`:
+#### En utilisant 'by' :
 
-* Using `by`, we can group by columns by specifying a *list of columns* or a
-*character vector of column names* or even *expressions*. The flexibility of
-`j`, combined with `by` and `i`, makes for a very powerful syntax.
-* `by` can handle multiple columns and also *expressions*.
-* We can `keyby` grouping columns to automatically sort the grouped result.
-* We can use `.SD` and `.SDcols` in `j` to operate on multiple columns using
-already familiar base functions. Here are some examples:
-   1. `DT[, lapply(.SD, fun), by = ..., .SDcols = ...]` - applies `fun` to all
-columns specified in `.SDcols` while grouping by the columns specified in
-`by`.
-   1. `DT[, head(.SD, 2), by = ...]` - return the first two rows for each group.
-   1. `DT[col > val, head(.SD, 1), by = ...]` - combine `i` along with `j` and `by`.
+* Avec `by`, nous pouvons regrouper par colonnes en spécifiant une *liste de
+colonnes* ou un *vecteur de caractères comportant le nom des colonnes* ou même
+des *expressions*. La flexibilité de `j`, combinée avec `by` et `i`, contribuent
+à obtenir une syntaxe très puissante.
+* `by` peut gérer plusieurs colonnes et aussi des *expressions*.
+* Vous pouvez grouper les colonnes avec `keyby` pour trier automatiquement les
+résultats groupés.
+* Nous pouvons utiliser `.SD` et `.SDcols` dans `j` pour opérer sur plusieurs
+colonnes en reprenant les fonctions de base déjà familières. Voici quelques
+exemples :
+   1. 'DT[, lapply(.SD, fun), by = ..., .SDcols = ...]' - applique 'fun' à toutes
+les colonnes spécifiées dans '.SDcols' en les regroupant selon les colonnes
+spécifiées dans 'by'.
+   1. 'DT[, head(.SD, 2), by = ...]' - renvoie les deux premières lignes de chaque
+groupe.
+   1. 'DT[col > val, head(.SD, 1), by = ...]' - combine 'i' avec 'j' et 'by'.
 
-#### And remember the tip:
+#### Et souvenez-vous du conseil :
 
-As long as `j` returns a `list`, each element of the list will become a column in
-the resulting `data.table`.
+Tant que 'j renvoie une 'liste', chaque élément de la liste va devenir unecolonne
+de la 'data.table' résultante.
 
 Nous verrons dans la vignette suivante comment *ajouter / mettre à jour /
-supprimer* des colonnes *par référence* et comment les combiner avec 'i' et'by' .
+supprimer* des colonnes *par référence* et comment les combiner avec 'i' et
+'by' .
 
 ***
 
-```{r,  echo=FALSE}
+```{r, echo=FALSE}
 setDTthreads(.old.th)
 ```
