@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: cluster 2.1.6\n"
 "POT-Creation-Date: 2021-08-19 20:27\n"
-"PO-Revision-Date: 2024-07-27 12:48+0200\n"
+"PO-Revision-Date: 2024-07-27 14:59+0200\n"
 "Last-Translator: Christian Wiat <w9204-rs@yahoo.com>\n"
 "Language-Team: none\n"
 "Language: fr\n"
@@ -505,7 +505,7 @@ msgstr ""
 
 #: d.Rmd:block 70 (header)
 msgid "-- How many trips have been made in 2014 from \"JFK\" airport in the month of June?"
-msgstr "-- Combien de voyages ont été réalisés en 2014 au départ de l'aéroport \"JFK\" au mis de juin ?"
+msgstr "-- Combien de voyages ont été réalisés en 2014 au départ de l'aéroport \"JFK\" au mois de juin ?"
 
 #: d.Rmd:block 72 (paragraph)
 msgid ""
