@@ -10,18 +10,40 @@ les fichiers résulats se trouvent dans -> https://github.com/ChristianWia/vigne
 
 Je suis parti du fichier -> datatable-intro.Rmd (il fallait bien commencer)
 
+Recopier datatable-intro.Rmd en datatable-intro-fr.Rmd pour commencer le traitement
+
 Les outils sont issus de -> https://github.com/mondeja/mdpo
 
-md2po  pour générer les .pot & .po
+md2po  pour générer les .pot & .po à partir du .Rmd de travail
 
 Command:
 ```
 md2po datatable-intro-fr.Rmd --quiet --save --po-filepath e:/datatable-intro-fr.po
 ```
 
+
 L'utilisation de md2po extrait ce qu'il y a entre les parties de code. La découpe faite par l'outil est assez fine. Elle suit la structure du paragraphe original. Les parties à traduire sont relativement petites (1 à 3 phrases en général) ce qui est plus agréable que d'avoir à traduire des gros blocs de texte. 
 
-enlever la troncature des lignes (à la colonne 79 chez moi) dans les préférences Poedit pour avoir des lignes continues.
+Ajouter le header Poedit au début du .po pour préparer le fichier à Poedit :
+
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: cluster 2.1.6\n"
+"POT-Creation-Date: 2021-08-19 20:27\n"
+"PO-Revision-Date: 2024-07-27 14:59+0200\n"
+"Last-Translator: Christian Wiat <w9204-rs@yahoo.com>\n"
+"Language-Team: none\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Poedit 2.4.2\n"
+
+Passer le fichier sous Poedit.
+
+enlever la troncature des lignes (à la colonne 79 chez moi) dans Poedit Préférences > Avancés , pour avoir des lignes continues.
 
 Le fichier .po est utilisable dans Poedit après quelques adaptations de l'entête
 
