@@ -116,7 +116,7 @@ msgstr ""
 msgid ""
 "We can use `data.table`'s fast-and-friendly file reader `fread` to load `flights` directly as follows:"
 msgstr ""
-"Vous pouvez utiliser le lecteur de fichier rapide et convivial 'fread' de 'data.table' piur charger "
+"Vous pouvez utiliser le lecteur de fichiers rapide et convivial 'fread' de 'data.table' pour charger "
 "'flights' ditectement ainsi :"
 
 #: d.Rmd:block 13 (paragraph)
@@ -145,7 +145,7 @@ msgstr ""
 
 #: d.Rmd:block 16 (ordered list)
 msgid "Then we will look at performing data aggregations by group"
-msgstr "Puis nous aborderons la manière d'agréger les données en groupes"
+msgstr "Puis nous aborderons la manière d'agréger les données par groupes"
 
 #: d.Rmd:block 17 (header)
 msgid "1. Basics {#basics-1}"
@@ -642,8 +642,7 @@ msgstr ""
 #: d.Rmd:block 86 (header)
 msgid "h) Great! But how can I refer to columns by names in `j` (like in a `data.frame`)? {#refer_j}"
 msgstr ""
-"h) Super !  Mais comment référencer les colonnes par nom dans `j` (comme avec un `data.frame`) ? "
-"{#refer_j}"
+"h) Super !  Mais comment référencer les colonnes par nom dans `j` (comme avec un `data.frame`) ? {#refer_j}"
 
 #: d.Rmd:block 87 (paragraph)
 msgid ""
@@ -806,11 +805,9 @@ msgstr "Cette forme pratique sera ensuite utilisée par la suite là où nécess
 
 #: d.Rmd:block 106 (header)
 msgid ""
-"-- How can we calculate the number of trips for each origin airport for carrier code `\"AA\"`? "
-"{#origin-.N}"
+"-- How can we calculate the number of trips for each origin airport for carrier code `\"AA\"`? {#origin-.N}"
 msgstr ""
-"-- Comment calculer le nombre de voyages au départ de chaque aéroport pour le transporteur ayant le "
-"code `\"AA\"`? {#origin-.N}"
+"-- Comment calculer le nombre de voyages au départ de chaque aéroport pour le transporteur ayant le code `\"AA\"`? {#origin-.N}"
 
 #: d.Rmd:block 107 (paragraph)
 msgid "The unique carrier code `\"AA\"` corresponds to *American Airlines Inc.*"
@@ -833,11 +830,9 @@ msgstr ""
 
 #: d.Rmd:block 110 (header)
 msgid ""
-"-- How can we get the total number of trips for each `origin, dest` pair for carrier code `\"AA\"`? "
-"{#origin-dest-.N}"
+"-- How can we get the total number of trips for each `origin, dest` pair for carrier code `\"AA\"`? {#origin-dest-.N}"
 msgstr ""
-"-- Comment obtenir le nombre total de voyages pour chaque paire `origin, dest` du transporteur ayant "
-"pour code `\"AA\"`? {#origin-dest-.N}"
+"-- Comment obtenir le nombre total de voyages pour chaque paire `origin, dest` du transporteur ayant pour code `\"AA\"`? {#origin-dest-.N}"
 
 #: d.Rmd:block 112 (unordered list)
 msgid ""
@@ -855,8 +850,7 @@ msgid ""
 "-- How can we get the average arrival and departure delay for each `orig,dest` pair for each month for "
 "carrier code `\"AA\"`? {#origin-dest-month}"
 msgstr ""
-"-- Comment obtenir les valeurs moyennes menselles du retard des arrivées et des départs pour chaque "
-"paire `orig,dest` pour le transporteur ayant le code `\"AA\"`? {#origin-dest-month}"
+"-- Comment obtenir les valeurs moyennes menselles du retard des arrivées et des départs pour chaque paire `orig,dest` pour le transporteur ayant le code `\"AA\"`? {#origin-dest-month}"
 
 #: d.Rmd:block 115 (unordered list)
 msgid ""
