@@ -52,7 +52,7 @@ une fois satisfait on recolle les morceaux avec l'outil   po2md
 
 Command:
 ```
-po2md e:/datatable-intro-fr.Rmd --pofiles e:/datatable-intro-fr.po --save e:/datatable-intro-fr2.Rmd
+po2md e:/datatable-intro-fr.Rmd --wrapwidth 0 --pofiles e:/datatable-intro-fr.po --save e:/datatable-intro-fr2.Rmd
 ```
 
 ce qui donne le fichier  datatable-intro-fr2.Rmd
