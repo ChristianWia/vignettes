@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>Using .SD for Data Analysis</title>
+<style type="text/css">
+/**
+ * Prism.s theme ported from highlight.js's xcode style
+ */
+pre code {
+  padding: 1em;
+}
+.token.comment {
+  color: #007400;
+}
+.token.punctuation {
+  color: #999;
+}
+.token.tag,
+.token.selector {
+  color: #aa0d91;
+}
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol {
+  color: #1c00cf;
+}
+.token.property,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin {
+  color: #c41a16;
+}
+.token.inserted {
+  background-color: #ccffd8;
+}
+.token.deleted {
+  background-color: #ffebe9;
+}
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string {
+  color: #9a6e3a;
+}
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: #836c28;
+}
+.token.function,
+.token.class-name {
+  color: #DD4A68;
+}
+.token.regex,
+.token.important,
+.token.variable {
+  color: #5c2699;
+}
+.token.important,
+.token.bold {
+  font-weight: bold;
+}
+.token.italic {
+  font-style: italic;
+}
+</style>
+<style type="text/css">
+body {
+  font-family: sans-serif;
+  max-width: 800px;
+  margin: auto;
+  padding: 1em;
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+body, .footnotes, code { font-size: .9em; }
+li li { font-size: .95em; }
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+pre, img { max-width: 100%; }
+pre, pre:hover {
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+pre code {
+  display: block;
+  overflow-x: auto;
+}
+code { font-family: 'DejaVu Sans Mono', 'Droid Sans Mono', 'Lucida Console', Consolas, Monaco, monospace; }
+:not(pre) > code, code[class] { background-color: #F8F8F8; }
+code.language-undefined, pre > code:not([class]) {
+  background-color: inherit;
+  border: 1px solid #eee;
+}
+table {
+  margin: auto;
+  border-top: 1px solid #666;
+}
+table thead th { border-bottom: 1px solid #ddd; }
+th, td { padding: 5px; }
+thead, tfoot, tr:nth-child(even) { background: #eee; }
+blockquote {
+  color: #666;
+  margin: 0;
+  padding-left: 1em;
+  border-left: 0.5em solid #eee;
+}
+hr, .footnotes::before { border: 1px dashed #ddd; }
+.frontmatter { text-align: center; }
+#TOC .numbered li { list-style: none; }
+#TOC .numbered { padding-left: 0; }
+#TOC .numbered ul { padding-left: 1em; }
+table, .body h2 { border-bottom: 1px solid #666; }
+.body .appendix, .appendix ~ h2 { border-bottom-style: dashed; }
+.footnote-ref a::before { content: "["; }
+.footnote-ref a::after { content: "]"; }
+section.footnotes::before {
+  content: "";
+  display: block;
+  max-width: 20em;
+}
+
+@media print {
+  body {
+    font-size: 12pt;
+    max-width: 100%;
+  }
+  tr, img { page-break-inside: avoid; }
+}
+@media only screen and (min-width: 992px) {
+  pre { white-space: pre; }
+}
+</style>
+</head>
+<body>
+<div class="frontmatter">
+<div class="title"><h1>Using .SD for Data Analysis</h1></div>
+<div class="author"><h2></h2></div>
+<div class="date"><h3>2024-07-28</h3></div>
+</div>
+<div class="body">
+<pre><code>## Warning: package 'data.table' was built under R version 4.0.3
+</code></pre>
+<p>Cette vignette explique les manières habituelles d’utiliser la variable <code>.SD</code> dans vos analyses de <code>data.table</code> . C’est une adaptation ce <a href="https://stackoverflow.com/a/47406952/3576984">cette réponse</a> donnée sur StackOverflow.</p>
+<h1 id="what-is-sd">What is <code>.SD</code>?</h1>
+<p>In the broadest sense, <code>.SD</code> is just shorthand for capturing a variable that comes up frequently in the context of data analysis. It can be understood to stand for <em>S</em>ubset, <em>S</em>elfsame, or <em>S</em>elf-reference of the <em>D</em>ata. That is, <code>.SD</code> is in its most basic guise a <em>reflexive reference</em> to the <code>data.table</code> itself – as we’ll see in examples below, this is particularly helpful for chaining together “queries” (extractions/subsets/etc using <code>[</code>). In particular, this also means that <code>.SD</code> is <em>itself a <code>data.table</code></em> (with the caveat that it does not allow assignment with <code>:=</code>).</p>
+<p>The simpler usage of <code>.SD</code> is for column subsetting (i.e., when <code>.SDcols</code> is specified); as this version is much more straightforward to understand, we’ll cover that first below. The interpretation of <code>.SD</code> in its second usage, grouping scenarios (i.e., when <code>by = </code> or <code>keyby = </code> is specified), is slightly different, conceptually (though at core it’s the same, since, after all, a non-grouped operation is an edge case of grouping with just one group).</p>
+<h2 id="loading-and-previewing-lahman-data">Loading and Previewing Lahman Data</h2>
+<p>To give this a more real-world feel, rather than making up data, let’s load some data sets about baseball from the <a href="https://github.com/cdalzell/Lahman">Lahman database</a>. In typical R usage, we’d simply load these data sets from the <code>Lahman</code> R package; in this vignette, we’ve pre-downloaded them directly from the package’s GitHub page instead.</p>
+<pre><code class="language-r">library(data.table)
+library(Lahman)
+load('Teams.RData')
+setDT(Teams)
+Teams
+#       yearID lgID teamID franchID divID Rank   G Ghome  W  L DivWin WCWin LgWin
+#    1:   1871   NA    BS1      BNA  &lt;NA&gt;    3  31    NA 20 10   &lt;NA&gt;  &lt;NA&gt;     N
+#    2:   1871   NA    CH1      CNA  &lt;NA&gt;    2  28    NA 19  9   &lt;NA&gt;  &lt;NA&gt;     N
+#    3:   1871   NA    CL1      CFC  &lt;NA&gt;    8  29    NA 10 19   &lt;NA&gt;  &lt;NA&gt;     N
+#    4:   1871   NA    FW1      KEK  &lt;NA&gt;    7  19    NA  7 12   &lt;NA&gt;  &lt;NA&gt;     N
+#    5:   1871   NA    NY2      NNA  &lt;NA&gt;    5  33    NA 16 17   &lt;NA&gt;  &lt;NA&gt;     N
+#   ---                                                                          
+# 2891:   2018   NL    SLN      STL     C    3 162    81 88 74      N     N     N
+# 2892:   2018   AL    TBA      TBD     E    3 162    81 90 72      N     N     N
+# 2893:   2018   AL    TEX      TEX     W    5 162    81 67 95      N     N     N
+# 2894:   2018   AL    TOR      TOR     E    4 162    81 73 89      N     N     N
+# 2895:   2018   NL    WAS      WSN     E    2 162    81 82 80      N     N     N
+#       WSWin   R   AB    H X2B X3B  HR  BB   SO  SB CS HBP SF  RA  ER  ERA CG
+#    1:  &lt;NA&gt; 401 1372  426  70  37   3  60   19  73 16  NA NA 303 109 3.55 22
+#    2:  &lt;NA&gt; 302 1196  323  52  21  10  60   22  69 21  NA NA 241  77 2.76 25
+#    3:  &lt;NA&gt; 249 1186  328  35  40   7  26   25  18  8  NA NA 341 116 4.11 23
+#    4:  &lt;NA&gt; 137  746  178  19   8   2  33    9  16  4  NA NA 243  97 5.17 19
+#    5:  &lt;NA&gt; 302 1404  403  43  21   1  33   15  46 15  NA NA 313 121 3.72 32
+#   ---                                                                       
+# 2891:     N 759 5498 1369 248   9 205 525 1380  63 32  80 48 691 622 3.85  1
+# 2892:     N 716 5475 1415 274  43 150 540 1388 128 51 101 50 646 602 3.74  0
+# 2893:     N 737 5453 1308 266  24 194 555 1484  74 35  88 34 848 783 4.92  1
+# 2894:     N 709 5477 1336 320  16 217 499 1387  47 30  58 37 832 772 4.85  0
+# 2895:     N 771 5517 1402 284  25 191 631 1289 119 33  59 40 682 649 4.04  2
+#       SHO SV IPouts   HA HRA BBA  SOA   E  DP    FP                    name
+#    1:   1  3    828  367   2  42   23 243  24 0.834    Boston Red Stockings
+#    2:   0  1    753  308   6  28   22 229  16 0.829 Chicago White Stockings
+#    3:   0  0    762  346  13  53   34 234  15 0.818  Cleveland Forest Citys
+#    4:   1  0    507  261   5  21   17 163   8 0.803    Fort Wayne Kekiongas
+#    5:   1  0    879  373   7  42   22 235  14 0.840        New York Mutuals
+#   ---                                                                      
+# 2891:   8 43   4366 1354 144 593 1337 133 151 0.978     St. Louis Cardinals
+# 2892:  14 52   4345 1236 164 501 1421  85 136 0.986          Tampa Bay Rays
+# 2893:   5 42   4293 1516 222 491 1121 120 168 0.980           Texas Rangers
+# 2894:   3 39   4301 1476 208 551 1298 101 138 0.983       Toronto Blue Jays
+# 2895:   7 40   4338 1320 198 487 1417  64 115 0.989    Washington Nationals
+#                                park attendance BPF PPF teamIDBR teamIDlahman45
+#    1:           South End Grounds I         NA 103  98      BOS            BS1
+#    2:       Union Base-Ball Grounds         NA 104 102      CHI            CH1
+#    3:  National Association Grounds         NA  96 100      CLE            CL1
+#    4:                Hamilton Field         NA 101 107      KEK            FW1
+#    5:      Union Grounds (Brooklyn)         NA  90  88      NYU            NY2
+#   ---                                                                         
+# 2891:             Busch Stadium III    3403587  97  96      STL            SLN
+# 2892:               Tropicana Field    1154973  97  97      TBR            TBA
+# 2893: Rangers Ballpark in Arlington    2107107 112 113      TEX            TEX
+# 2894:                 Rogers Centre    2325281  97  98      TOR            TOR
+# 2895:                Nationals Park    2529604 106 105      WSN            MON
+#       teamIDretro
+#    1:         BS1
+#    2:         CH1
+#    3:         CL1
+#    4:         FW1
+#    5:         NY2
+#   ---            
+# 2891:         SLN
+# 2892:         TBA
+# 2893:         TEX
+# 2894:         TOR
+# 2895:         WAS
+
+load('Pitching.RData')
+setDT(Pitching)
+Pitching
+#         playerID yearID stint teamID lgID  W  L  G GS CG SHO SV IPouts   H  ER
+#     1: bechtge01   1871     1    PH1   NA  1  2  3  3  2   0  0     78  43  23
+#     2: brainas01   1871     1    WS3   NA 12 15 30 30 30   0  0    792 361 132
+#     3: fergubo01   1871     1    NY2   NA  0  0  1  0  0   0  0      3   8   3
+#     4: fishech01   1871     1    RC1   NA  4 16 24 24 22   1  0    639 295 103
+#     5: fleetfr01   1871     1    NY2   NA  0  1  1  1  1   0  0     27  20  10
+#    ---                                                                        
+# 46695: zamorda01   2018     1    NYN   NL  1  0 16  0  0   0  0     27   6   3
+# 46696: zastrro01   2018     1    CHN   NL  1  0  6  0  0   0  0     17   6   3
+# 46697: zieglbr01   2018     1    MIA   NL  1  5 53  0  0   0 10    156  49  23
+# 46698: zieglbr01   2018     2    ARI   NL  1  1 29  0  0   0  0     65  22   9
+# 46699: zimmejo02   2018     1    DET   AL  7  8 25 25  0   0  0    394 140  66
+#        HR BB  SO BAOpp   ERA IBB WP HBP BK  BFP GF   R SH SF GIDP
+#     1:  0 11   1    NA  7.96  NA  7  NA  0  146  0  42 NA NA   NA
+#     2:  4 37  13    NA  4.50  NA  7  NA  0 1291  0 292 NA NA   NA
+#     3:  0  0   0    NA 27.00  NA  2  NA  0   14  0   9 NA NA   NA
+#     4:  3 31  15    NA  4.35  NA 20  NA  0 1080  1 257 NA NA   NA
+#     5:  0  3   0    NA 10.00  NA  0  NA  0   57  0  21 NA NA   NA
+#    ---                                                           
+# 46695:  1  3  16 0.194  3.00   1  0   1  0   36  4   3  1  0    1
+# 46696:  0  4   3 0.286  4.76   0  0   1  0   26  2   3  0  0    0
+# 46697:  7 17  37 0.254  3.98   4  1   2  0  213 23  25  0  1   11
+# 46698:  1  8  13 0.265  3.74   2  0   0  0   92  1   9  0  1    3
+# 46699: 28 26 111 0.269  4.52   0  1   2  0  556  0  76  2  5    4
+</code></pre>
+<p>Readers up on baseball lingo should find the tables’ contents familiar; <code>Teams</code> records some statistics for a given team in a given year, while <code>Pitching</code> records statistics for a given pitcher in a given year. Please do check out the <a href="https://github.com/cdalzell/Lahman">documentation</a> and explore the data yourself a bit before proceeding to familiarize yourself with their structure.</p>
+<h1 id="sd-on-ungrouped-data"><code>.SD</code> on Ungrouped Data</h1>
+<p>To illustrate what I mean about the reflexive nature of <code>.SD</code>, consider its most banal usage:</p>
+<pre><code class="language-r">Pitching[ , .SD]
+#         playerID yearID stint teamID lgID  W  L  G GS CG SHO SV IPouts   H  ER
+#     1: bechtge01   1871     1    PH1   NA  1  2  3  3  2   0  0     78  43  23
+#     2: brainas01   1871     1    WS3   NA 12 15 30 30 30   0  0    792 361 132
+#     3: fergubo01   1871     1    NY2   NA  0  0  1  0  0   0  0      3   8   3
+#     4: fishech01   1871     1    RC1   NA  4 16 24 24 22   1  0    639 295 103
+#     5: fleetfr01   1871     1    NY2   NA  0  1  1  1  1   0  0     27  20  10
+#    ---                                                                        
+# 46695: zamorda01   2018     1    NYN   NL  1  0 16  0  0   0  0     27   6   3
+# 46696: zastrro01   2018     1    CHN   NL  1  0  6  0  0   0  0     17   6   3
+# 46697: zieglbr01   2018     1    MIA   NL  1  5 53  0  0   0 10    156  49  23
+# 46698: zieglbr01   2018     2    ARI   NL  1  1 29  0  0   0  0     65  22   9
+# 46699: zimmejo02   2018     1    DET   AL  7  8 25 25  0   0  0    394 140  66
+#        HR BB  SO BAOpp   ERA IBB WP HBP BK  BFP GF   R SH SF GIDP
+#     1:  0 11   1    NA  7.96  NA  7  NA  0  146  0  42 NA NA   NA
+#     2:  4 37  13    NA  4.50  NA  7  NA  0 1291  0 292 NA NA   NA
+#     3:  0  0   0    NA 27.00  NA  2  NA  0   14  0   9 NA NA   NA
+#     4:  3 31  15    NA  4.35  NA 20  NA  0 1080  1 257 NA NA   NA
+#     5:  0  3   0    NA 10.00  NA  0  NA  0   57  0  21 NA NA   NA
+#    ---                                                           
+# 46695:  1  3  16 0.194  3.00   1  0   1  0   36  4   3  1  0    1
+# 46696:  0  4   3 0.286  4.76   0  0   1  0   26  2   3  0  0    0
+# 46697:  7 17  37 0.254  3.98   4  1   2  0  213 23  25  0  1   11
+# 46698:  1  8  13 0.265  3.74   2  0   0  0   92  1   9  0  1    3
+# 46699: 28 26 111 0.269  4.52   0  1   2  0  556  0  76  2  5    4
+</code></pre>
+<p>That is, <code>Pitching[ , .SD]</code> has simply returned the whole table, i.e., this was an overly verbose way of writing <code>Pitching</code> or <code>Pitching[]</code>:</p>
+<pre><code class="language-r">identical(Pitching, Pitching[ , .SD])
+# [1] TRUE
+</code></pre>
+<p>In terms of subsetting, <code>.SD</code> is still a subset of the data, it’s just a trivial one (the set itself).</p>
+<h2 id="column-subsetting-sdcols">Column Subsetting: <code>.SDcols</code></h2>
+<p>The first way to impact what <code>.SD</code> is is to limit the <em>columns</em> contained in <code>.SD</code> using the <code>.SDcols</code> argument to <code>[</code>:</p>
+<pre><code class="language-r"># W: Wins; L: Losses; G: Games
+Pitching[ , .SD, .SDcols = c('W', 'L', 'G')]
+#         W  L  G
+#     1:  1  2  3
+#     2: 12 15 30
+#     3:  0  0  1
+#     4:  4 16 24
+#     5:  0  1  1
+#    ---         
+# 46695:  1  0 16
+# 46696:  1  0  6
+# 46697:  1  5 53
+# 46698:  1  1 29
+# 46699:  7  8 25
+</code></pre>
+<p>This is just for illustration and was pretty boring. In addition to accepting a character vector, <code>.SDcols</code> also accepts:</p>
+<ol>
+<li>any function such as <code>is.character</code> to filter <em>columns</em></li>
+<li>the function^{*} <code>patterns()</code> to filter <em>column names</em> by regular expression</li>
+<li>integer and logical vectors</li>
+</ol>
+<p>*see <code>?patterns</code> for more details</p>
+<p>This simple usage lends itself to a wide variety of highly beneficial / ubiquitous data manipulation operations:</p>
+<h2 id="column-type-conversion">Column Type Conversion</h2>
+<p>Column type conversion is a fact of life for data munging. Though <a href="https://github.com/Rdatatable/data.table/pull/2545"><code>fwrite</code> recently gained the ability to declare the class of each column up front</a>, not all data sets come from <code>fread</code> (e.g. in this vignette) and conversions back and forth among <code>character</code>/<code>factor</code>/<code>numeric</code> types are common. We can use <code>.SD</code> and <code>.SDcols</code> to batch-convert groups of columns to a common type.</p>
+<p>We notice that the following columns are stored as <code>character</code> in the <code>Teams</code> data set, but might more logically be stored as <code>factor</code>s:</p>
+<pre><code class="language-r"># teamIDBR: Team ID used by Baseball Reference website
+# teamIDlahman45: Team ID used in Lahman database version 4.5
+# teamIDretro: Team ID used by Retrosheet
+fkt = c('teamIDBR', 'teamIDlahman45', 'teamIDretro')
+# confirm that they're stored as `character`
+str(Teams[ , ..fkt])
+# Classes 'data.table' and 'data.frame':	2895 obs. of  3 variables:
+#  $ teamIDBR      : chr  &quot;BOS&quot; &quot;CHI&quot; &quot;CLE&quot; &quot;KEK&quot; ...
+#  $ teamIDlahman45: chr  &quot;BS1&quot; &quot;CH1&quot; &quot;CL1&quot; &quot;FW1&quot; ...
+#  $ teamIDretro   : chr  &quot;BS1&quot; &quot;CH1&quot; &quot;CL1&quot; &quot;FW1&quot; ...
+#  - attr(*, &quot;.internal.selfref&quot;)=&lt;externalptr&gt;
+</code></pre>
+<p>The syntax to now convert these columns to <code>factor</code> is simple:</p>
+<pre><code class="language-r">#-&gt;Teams[ , names(.SD) := lapply(.SD, factor), .SDcols = patterns('teamID')]
+# print out the first column to demonstrate success
+head(unique(Teams[[fkt[1L]]]))
+# [1] &quot;BOS&quot; &quot;CHI&quot; &quot;CLE&quot; &quot;KEK&quot; &quot;NYU&quot; &quot;ATH&quot;
+</code></pre>
+<p>Note:</p>
+<ol>
+<li>The <code>:=</code> is an assignment operator to update the <code>data.table</code> in place without making a copy. See <a href="https://cran.r-project.org/web/packages/data.table/vignettes/datatable-reference-semantics.html">reference semantics</a> for more.</li>
+<li>The LHS, <code>names(.SD)</code>, indicates which columns we are updating - in this case we update the entire <code>.SD</code>.</li>
+<li>The RHS, <code>lapply()</code>, loops through each column of the <code>.SD</code> and converts the column to a factor.</li>
+<li>We use the <code>.SDcols</code> to only select columns that have pattern of <code>teamID</code>.</li>
+</ol>
+<p>Again, the <code>.SDcols</code> argument is quite flexible; above, we supplied <code>patterns</code> but we could have also supplied <code>fkt</code> or any <code>character</code> vector of column names. In other situations, it is more convenient to supply an <code>integer</code> vector of column <em>positions</em> or a <code>logical</code> vector dictating include/exclude for each column. Finally, the use of a function to filter columns is very helpful.</p>
+<p>For example, we could do the following to convert all <code>factor</code> columns to <code>character</code>:</p>
+<pre><code class="language-r">fct_idx = Teams[, which(sapply(.SD, is.factor))] # column numbers to show the class changing
+str(Teams[[fct_idx[1L]]])
+#  Factor w/ 7 levels &quot;AA&quot;,&quot;AL&quot;,&quot;FL&quot;,..: 4 4 4 4 4 4 4 4 4 4 ...
+#-&gt;Teams[ , names(.SD) := lapply(.SD, as.character), .SDcols = is.factor]
+str(Teams[[fct_idx[1L]]])
+#  Factor w/ 7 levels &quot;AA&quot;,&quot;AL&quot;,&quot;FL&quot;,..: 4 4 4 4 4 4 4 4 4 4 ...
+</code></pre>
+<p>Lastly, we can do pattern-based matching of columns in <code>.SDcols</code> to select all columns which contain <code>team</code> back to <code>factor</code>:</p>
+<pre><code class="language-r">Teams[ , .SD, .SDcols = patterns('team')]
+#       teamID teamIDBR teamIDlahman45 teamIDretro
+#    1:    BS1      BOS            BS1         BS1
+#    2:    CH1      CHI            CH1         CH1
+#    3:    CL1      CLE            CL1         CL1
+#    4:    FW1      KEK            FW1         FW1
+#    5:    NY2      NYU            NY2         NY2
+#   ---                                           
+# 2891:    SLN      STL            SLN         SLN
+# 2892:    TBA      TBR            TBA         TBA
+# 2893:    TEX      TEX            TEX         TEX
+# 2894:    TOR      TOR            TOR         TOR
+# 2895:    WAS      WSN            MON         WAS
+#-&gt;Teams[ , names(.SD) := lapply(.SD, factor), .SDcols = patterns('team')]
+</code></pre>
+<p>** A proviso to the above: <em>explicitly</em> using column numbers (like <code>DT[ , (1) := rnorm(.N)]</code>) is bad practice and can lead to silently corrupted code over time if column positions change. Even implicitly using numbers can be dangerous if we don’t keep smart/strict control over the ordering of when we create the numbered index and when we use it.</p>
+<h2 id="controlling-a-model-s-right-hand-side">Controlling a Model’s Right-Hand Side</h2>
+<p>Varying model specification is a core feature of robust statistical analysis. Let’s try and predict a pitcher’s ERA (Earned Runs Average, a measure of performance) using the small set of covariates available in the <code>Pitching</code> table. How does the (linear) relationship between <code>W</code> (wins) and <code>ERA</code> vary depending on which other covariates are included in the specification?</p>
+<p>Here’s a short script leveraging the power of <code>.SD</code> which explores this question:</p>
+<pre><code class="language-rsd_for_lm"># this generates a list of the 2^k possible extra variables
+#   for models of the form ERA ~ G + (...)
+extra_var = c('yearID', 'teamID', 'G', 'L')
+models = unlist(
+  lapply(0L:length(extra_var), combn, x = extra_var, simplify = FALSE),
+  recursive = FALSE
+)
+
+# here are 16 visually distinct colors, taken from the list of 20 here:
+#   https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
+col16 = c('#e6194b', '#3cb44b', '#ffe119', '#0082c8',
+          '#f58231', '#911eb4', '#46f0f0', '#f032e6',
+          '#d2f53c', '#fabebe', '#008080', '#e6beff',
+          '#aa6e28', '#fffac8', '#800000', '#aaffc3')
+
+par(oma = c(2, 0, 0, 0))
+lm_coef = sapply(models, function(rhs) {
+  # using ERA ~ . and data = .SD, then varying which
+  #   columns are included in .SD allows us to perform this
+  #   iteration over 16 models succinctly.
+  #   coef(.)['W'] extracts the W coefficient from each model fit
+  Pitching[ , coef(lm(ERA ~ ., data = .SD))['W'], .SDcols = c('W', rhs)]
+})
+barplot(lm_coef, names.arg = sapply(models, paste, collapse = '/'),
+        main = 'Wins Coefficient\nWith Various Covariates',
+        col = col16, las = 2L, cex.names = 0.8)
+</code></pre>
+<p>The coefficient always has the expected sign (better pitchers tend to have more wins and fewer runs allowed), but the magnitude can vary substantially depending on what else we control for.</p>
+<h2 id="conditional-joins">Conditional Joins</h2>
+<p><code>data.table</code> syntax is beautiful for its simplicity and robustness. The syntax <code>x[i]</code> flexibly handles three common approaches to subsetting – when <code>i</code> is a <code>logical</code> vector, <code>x[i]</code> will return those rows of <code>x</code> corresponding to where <code>i</code> is <code>TRUE</code>; when <code>i</code> is <em>another <code>data.table</code></em> (or a <code>list</code>), a (right) <code>join</code> is performed (in the plain form, using the <code>key</code>s of <code>x</code> and <code>i</code>, otherwise, when <code>on = </code> is specified, using matches of those columns); and when <code>i</code> is a character, it is interpreted as shorthand for <code>x[list(i)]</code>, i.e., as a join.</p>
+<p>This is great in general, but falls short when we wish to perform a <em>conditional join</em>, wherein the exact nature of the relationship among tables depends on some characteristics of the rows in one or more columns.</p>
+<p>This example is admittedly a tad contrived, but illustrates the idea; see here (<a href="https://stackoverflow.com/questions/31329939/conditional-keyed-join-update-and-update-a-flag-column-for-matches">1</a>, <a href="https://stackoverflow.com/questions/29658627/conditional-binary-join-and-update-by-reference-using-the-data-table-package">2</a>) for more.</p>
+<p>The goal is to add a column <code>team_performance</code> to the <code>Pitching</code> table that records the team’s performance (rank) of the best pitcher on each team (as measured by the lowest ERA, among pitchers with at least 6 recorded games).</p>
+<pre><code class="language-r"># to exclude pitchers with exceptional performance in a few games,
+#   subset first; then define rank of pitchers within their team each year
+#   (in general, we should put more care into the 'ties.method' of frank)
+Pitching[G &gt; 5, rank_in_team := frank(ERA), by = .(teamID, yearID)]
+Pitching[rank_in_team == 1, team_performance :=
+           Teams[.SD, Rank, on = c('teamID', 'yearID')]]
+</code></pre>
+<p>Note that the <code>x[y]</code> syntax returns <code>nrow(y)</code> values (i.e., it’s a right join), which is why <code>.SD</code> is on the right in <code>Teams[.SD]</code> (since the RHS of <code>:=</code> in this case requires <code>nrow(Pitching[rank_in_team == 1])</code> values).</p>
+<h1 id="grouped-sd-operations">Grouped <code>.SD</code> operations</h1>
+<p>Often, we’d like to perform some operation on our data <em>at the group level</em>. When we specify <code>by =</code> (or <code>keyby = </code>), the mental model for what happens when <code>data.table</code> processes <code>j</code> is to think of your <code>data.table</code> as being split into many component sub-<code>data.table</code>s, each of which corresponds to a single value of your <code>by</code> variable(s):</p>
+<p><img src="plots/grouping_illustration.png" alt="Grouping, Illustrated" /></p>
+<!-- 'A visual depiction of how grouping works. On the left is a grid. The first column is titled "ID COLUMN" with values the capital letters A through G, and the rest of the data is unlabelled, but is in a darker color and simply has "Data" written to indicate that's arbitrary. A right arrow shows how this data is split into groups. Each capital letter A through G has a grid on the right-hand side; the grid on the left has been subdivided to create that on the right.' -->
+<p>In the case of grouping, <code>.SD</code> is multiple in nature – it refers to <em>each</em> of these sub-<code>data.table</code>s, <em>one-at-a-time</em> (slightly more accurately, the scope of <code>.SD</code> is a single sub-<code>data.table</code>). This allows us to concisely express an operation that we’d like to perform on <em>each sub-<code>data.table</code></em> before the re-assembled result is returned to us.</p>
+<p>This is useful in a variety of settings, the most common of which are presented here:</p>
+<h2 id="group-subsetting">Group Subsetting</h2>
+<p>Let’s get the most recent season of data for each team in the Lahman data. This can be done quite simply with:</p>
+<pre><code class="language-r"># the data is already sorted by year; if it weren't
+#   we could do Teams[order(yearID), .SD[.N], by = teamID]
+Teams[ , .SD[.N], by = teamID]
+#      teamID yearID lgID franchID divID Rank   G Ghome  W  L DivWin WCWin LgWin
+#   1:    BS1   1875   NA      BNA  &lt;NA&gt;    1  82    NA 71  8   &lt;NA&gt;  &lt;NA&gt;     Y
+#   2:    CH1   1871   NA      CNA  &lt;NA&gt;    2  28    NA 19  9   &lt;NA&gt;  &lt;NA&gt;     N
+#   3:    CL1   1872   NA      CFC  &lt;NA&gt;    7  22    NA  6 16   &lt;NA&gt;  &lt;NA&gt;     N
+#   4:    FW1   1871   NA      KEK  &lt;NA&gt;    7  19    NA  7 12   &lt;NA&gt;  &lt;NA&gt;     N
+#   5:    NY2   1875   NA      NNA  &lt;NA&gt;    6  71    NA 30 38   &lt;NA&gt;  &lt;NA&gt;     N
+#  ---                                                                          
+# 145:    ANA   2004   AL      ANA     W    1 162    81 92 70      Y     N     N
+# 146:    ARI   2018   NL      ARI     W    3 162    81 82 80      N     N     N
+# 147:    MIL   2018   NL      MIL     C    1 163    81 96 67      Y     N     N
+# 148:    TBA   2018   AL      TBD     E    3 162    81 90 72      N     N     N
+# 149:    MIA   2018   NL      FLA     E    5 161    81 63 98      N     N     N
+#      WSWin   R   AB    H X2B X3B  HR  BB   SO  SB CS HBP SF  RA  ER  ERA CG SHO
+#   1:  &lt;NA&gt; 831 3515 1128 167  51  15  33   52  93 37  NA NA 343 152 1.87 60  10
+#   2:  &lt;NA&gt; 302 1196  323  52  21  10  60   22  69 21  NA NA 241  77 2.76 25   0
+#   3:  &lt;NA&gt; 174  943  272  28   5   0  17   13  12  3  NA NA 254 126 5.70 15   0
+#   4:  &lt;NA&gt; 137  746  178  19   8   2  33    9  16  4  NA NA 243  97 5.17 19   1
+#   5:  &lt;NA&gt; 328 2685  633  82  21   7  19   47  20 24  NA NA 425 174 2.46 70   3
+#  ---                                                                           
+# 145:     N 836 5675 1603 272  37 162 450  942 143 46  73 41 734 692 4.28  2  11
+# 146:     N 693 5460 1283 259  50 176 560 1460  79 25  52 45 644 605 3.72  2   9
+# 147:     N 754 5542 1398 252  24 218 537 1458 124 32  58 41 659 606 3.73  0  14
+# 148:     N 716 5475 1415 274  43 150 540 1388 128 51 101 50 646 602 3.74  0  14
+# 149:     N 589 5488 1303 222  24 128 455 1384  45 31  73 31 809 762 4.76  1  12
+#      SV IPouts   HA HRA BBA  SOA   E  DP    FP                    name
+#   1: 17   2196  751   2  33  110 483  56 0.870    Boston Red Stockings
+#   2:  1    753  308   6  28   22 229  16 0.829 Chicago White Stockings
+#   3:  0    597  285   6  24   11 184  17 0.816  Cleveland Forest Citys
+#   4:  0    507  261   5  21   17 163   8 0.803    Fort Wayne Kekiongas
+#   5:  0   1910  718   4  21   77 526  30 0.838        New York Mutuals
+#  ---                                                                  
+# 145: 50   4363 1476 170 502 1164  90 126 0.985          Anaheim Angels
+# 146: 39   4389 1313 174 522 1448  75 152 0.988    Arizona Diamondbacks
+# 147: 49   4383 1259 173 553 1428 108 141 0.982       Milwaukee Brewers
+# 148: 52   4345 1236 164 501 1421  85 136 0.986          Tampa Bay Rays
+# 149: 30   4326 1388 192 605 1249  83 133 0.986           Miami Marlins
+#                              park attendance BPF PPF teamIDBR teamIDlahman45
+#   1:          South End Grounds I         NA 103  96      BOS            BS1
+#   2:      Union Base-Ball Grounds         NA 104 102      CHI            CH1
+#   3: National Association Grounds         NA  96 100      CLE            CL1
+#   4:               Hamilton Field         NA 101 107      KEK            FW1
+#   5:     Union Grounds (Brooklyn)         NA  99 100      NYU            NY2
+#  ---                                                                        
+# 145:    Angels Stadium of Anaheim    3375677  97  97      ANA            ANA
+# 146:                  Chase Field    2242695 108 107      ARI            ARI
+# 147:                  Miller Park    2850875 102 101      MIL            ML4
+# 148:              Tropicana Field    1154973  97  97      TBR            TBA
+# 149:                 Marlins Park     811104  89  90      MIA            FLO
+#      teamIDretro
+#   1:         BS1
+#   2:         CH1
+#   3:         CL1
+#   4:         FW1
+#   5:         NY2
+#  ---            
+# 145:         ANA
+# 146:         ARI
+# 147:         MIL
+# 148:         TBA
+# 149:         MIA
+</code></pre>
+<p>Recall that <code>.SD</code> is itself a <code>data.table</code>, and that <code>.N</code> refers to the total number of rows in a group (it’s equal to <code>nrow(.SD)</code> within each group), so <code>.SD[.N]</code> returns the <em>entirety of <code>.SD</code></em> for the final row associated with each <code>teamID</code>.</p>
+<p>Another common version of this is to use <code>.SD[1L]</code> instead to get the <em>first</em> observation for each group, or <code>.SD[sample(.N, 1L)]</code> to return a <em>random</em> row for each group.</p>
+<h2 id="group-optima">Group Optima</h2>
+<p>Suppose we wanted to return the <em>best</em> year for each team, as measured by their total number of runs scored (<code>R</code>; we could easily adjust this to refer to other metrics, of course). Instead of taking a <em>fixed</em> element from each sub-<code>data.table</code>, we now define the desired index <em>dynamically</em> as follows:</p>
+<pre><code class="language-r">Teams[ , .SD[which.max(R)], by = teamID]
+#      teamID yearID lgID franchID divID Rank   G Ghome   W  L DivWin WCWin LgWin
+#   1:    BS1   1875   NA      BNA  &lt;NA&gt;    1  82    NA  71  8   &lt;NA&gt;  &lt;NA&gt;     Y
+#   2:    CH1   1871   NA      CNA  &lt;NA&gt;    2  28    NA  19  9   &lt;NA&gt;  &lt;NA&gt;     N
+#   3:    CL1   1871   NA      CFC  &lt;NA&gt;    8  29    NA  10 19   &lt;NA&gt;  &lt;NA&gt;     N
+#   4:    FW1   1871   NA      KEK  &lt;NA&gt;    7  19    NA   7 12   &lt;NA&gt;  &lt;NA&gt;     N
+#   5:    NY2   1872   NA      NNA  &lt;NA&gt;    3  56    NA  34 20   &lt;NA&gt;  &lt;NA&gt;     N
+#  ---                                                                           
+# 145:    ANA   2000   AL      ANA     W    3 162    81  82 80      N     N     N
+# 146:    ARI   1999   NL      ARI     W    1 162    81 100 62      Y     N     N
+# 147:    MIL   1999   NL      MIL     C    5 161    80  74 87      N     N     N
+# 148:    TBA   2009   AL      TBD     E    3 162    81  84 78      N     N     N
+# 149:    MIA   2017   NL      FLA     E    2 162    78  77 85      N     N     N
+#      WSWin   R   AB    H X2B X3B  HR  BB   SO  SB CS HBP SF  RA  ER  ERA CG SHO
+#   1:  &lt;NA&gt; 831 3515 1128 167  51  15  33   52  93 37  NA NA 343 152 1.87 60  10
+#   2:  &lt;NA&gt; 302 1196  323  52  21  10  60   22  69 21  NA NA 241  77 2.76 25   0
+#   3:  &lt;NA&gt; 249 1186  328  35  40   7  26   25  18  8  NA NA 341 116 4.11 23   0
+#   4:  &lt;NA&gt; 137  746  178  19   8   2  33    9  16  4  NA NA 243  97 5.17 19   1
+#   5:  &lt;NA&gt; 523 2426  670  87  14   4  58   52  59 22  NA NA 362 172 3.02 54   3
+#  ---                                                                           
+# 145:     N 864 5628 1574 309  34 236 608 1024  93 52  47 43 869 805 5.00  5   3
+# 146:     N 908 5658 1566 289  46 216 588 1045 137 39  48 60 676 615 3.77 16   9
+# 147:     N 815 5582 1524 299  30 165 658 1065  81 33  55 51 886 813 5.07  2   5
+# 148:     N 803 5462 1434 297  36 199 642 1229 194 61  49 45 754 686 4.33  3   5
+# 149:     N 778 5602 1497 271  31 194 486 1282  91 30  67 41 822 772 4.82  1   7
+#      SV IPouts   HA HRA BBA  SOA   E  DP    FP                    name
+#   1: 17   2196  751   2  33  110 483  56 0.870    Boston Red Stockings
+#   2:  1    753  308   6  28   22 229  16 0.829 Chicago White Stockings
+#   3:  0    762  346  13  53   34 234  15 0.818  Cleveland Forest Citys
+#   4:  0    507  261   5  21   17 163   8 0.803    Fort Wayne Kekiongas
+#   5:  1   1536  622   2  33   46 323  33 0.868        New York Mutuals
+#  ---                                                                  
+# 145: 46   4344 1534 228 662  846 134 182 0.978          Anaheim Angels
+# 146: 42   4402 1387 176 543 1198 104 132 0.983    Arizona Diamondbacks
+# 147: 40   4328 1618 213 616  987 127 146 0.979       Milwaukee Brewers
+# 148: 41   4282 1421 183 515 1125  98 135 0.983          Tampa Bay Rays
+# 149: 34   4328 1450 193 627 1202  73 156 0.988           Miami Marlins
+#                              park attendance BPF PPF teamIDBR teamIDlahman45
+#   1:          South End Grounds I         NA 103  96      BOS            BS1
+#   2:      Union Base-Ball Grounds         NA 104 102      CHI            CH1
+#   3: National Association Grounds         NA  96 100      CLE            CL1
+#   4:               Hamilton Field         NA 101 107      KEK            FW1
+#   5:     Union Grounds (Brooklyn)         NA  93  92      NYU            NY2
+#  ---                                                                        
+# 145:   Edison International Field    2066982 102 103      ANA            ANA
+# 146:            Bank One Ballpark    3019654 101 101      ARI            ARI
+# 147:               County Stadium    1701796  99  99      MIL            ML4
+# 148:              Tropicana Field    1874962  98  97      TBR            TBA
+# 149:                 Marlins Park    1583014  93  93      MIA            FLO
+#      teamIDretro
+#   1:         BS1
+#   2:         CH1
+#   3:         CL1
+#   4:         FW1
+#   5:         NY2
+#  ---            
+# 145:         ANA
+# 146:         ARI
+# 147:         MIL
+# 148:         TBA
+# 149:         MIA
+</code></pre>
+<p>Note that this approach can of course be combined with <code>.SDcols</code> to return only portions of the <code>data.table</code> for each <code>.SD</code> (with the caveat that <code>.SDcols</code> should be fixed across the various subsets)</p>
+<p><em>NB</em>: <code>.SD[1L]</code> is currently optimized by <a href="https://Rdatatable.gitlab.io/data.table/library/data.table/html/datatable-optimize.html"><em><code>GForce</code></em></a> (<a href="https://stackoverflow.com/questions/22137591/about-gforce-in-data-table-1-9-2">see also</a>), <code>data.table</code> internals which massively speed up the most common grouped operations like <code>sum</code> or <code>mean</code> – see <code>?GForce</code> for more details and keep an eye on/voice support for feature improvement requests for updates on this front: <a href="https://github.com/Rdatatable/data.table/issues/735">1</a>, <a href="https://github.com/Rdatatable/data.table/issues/2778">2</a>, <a href="https://github.com/Rdatatable/data.table/issues/523">3</a>, <a href="https://github.com/Rdatatable/data.table/issues/971">4</a>, <a href="https://github.com/Rdatatable/data.table/issues/1197">5</a>, <a href="https://github.com/Rdatatable/data.table/issues/1414">6</a></p>
+<h2 id="grouped-regression">Grouped Regression</h2>
+<p>Returning to the inquiry above regarding the relationship between <code>ERA</code> and <code>W</code>, suppose we expect this relationship to differ by team (i.e., there’s a different slope for each team). We can easily re-run this regression to explore the heterogeneity in this relationship as follows (noting that the standard errors from this approach are generally incorrect – the specification <code>ERA ~ W*teamID</code> will be better – this approach is easier to read and the <em>coefficients</em> are OK):</p>
+<pre><code class="language-r"># Overall coefficient for comparison
+overall_coef = Pitching[ , coef(lm(ERA ~ W))['W']]
+# use the .N &gt; 20 filter to exclude teams with few observations
+Pitching[ , if (.N &gt; 20L) .(w_coef = coef(lm(ERA ~ W))['W']), by = teamID
+          ][ , hist(w_coef, 20L, las = 1L,
+                    xlab = 'Fitted Coefficient on W',
+                    ylab = 'Number of Teams', col = 'darkgreen',
+                    main = 'Team-Level Distribution\nWin Coefficients on ERA')]
+abline(v = overall_coef, lty = 2L, col = 'red')
+</code></pre>
+<div class="figure">
+<img src="data:image/png;base64,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" alt="A histogram depicting the distribution of fitted coefficients. It is vaguely bell-shaped and concentrated around -.2" width="100%" />
+<p class="caption">A histogram depicting the distribution of fitted coefficients. It is vaguely bell-shaped and concentrated around -.2</p>
+</div>
+<p>While there is indeed a fair amount of heterogeneity, there’s a distinct concentration around the observed overall value.</p>
+<p>Tout ceci n’est simplement qu’une brève introduction sur la puissance de <code>.SD</code> qui facilite la beauté et l’efficacité du code dans <code>data.table</code> !</p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
+</body>
+</html>
