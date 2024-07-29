@@ -2,16 +2,18 @@
 title: "Using .SD for Data Analysis"
 date: "`r Sys.Date()`"
 output:
-  markdown::html_format:
-options:
-toc: true
-number_sections: true
-meta:
-css: [default, css/toc.css]
-vignette: >
-  %\VignetteIndexEntry{Using .SD for Data Analysis}
-  %\VignetteEngine{knitr::knitr}
-  \usepackage[utf8]{inputenc}
+  html_document:
+    df_print: paged
+  markdown::html_format: null
+options: null
+toc: yes
+number_sections: yes
+meta: null
+css:
+- default
+- css/toc.css
+vignette: |
+  %\VignetteIndexEntry{Using .SD for Data Analysis} %\VignetteEngine{knitr::knitr} \usepackage[utf8]{inputenc}
 ---
 
 ```{r, echo = FALSE, message = FALSE}
@@ -41,8 +43,6 @@ The simpler usage of `.SD` is for column subsetting (i.e., when `.SDcols` is spe
 To give this a more real-world feel, rather than making up data, let's load some data sets about baseball from the [Lahman database](https://github.com/cdalzell/Lahman). In typical R usage, we'd simply load these data sets from the `Lahman` R package; in this vignette, we've pre-downloaded them directly from the package's GitHub page instead.
 
 ```{r download_lahman}
-library(data.table)
-library(Lahman)
 load('Teams.RData')
 setDT(Teams)
 Teams
@@ -107,7 +107,7 @@ str(Teams[ , ..fkt])
 The syntax to now convert these columns to `factor` is simple:
 
 ```{r assign_factors}
-#->Teams[ , names(.SD) := lapply(.SD, factor), .SDcols = patterns('teamID')]
+Teams[ , names(.SD) := lapply(.SD, factor), .SDcols = patterns('teamID')]
 # print out the first column to demonstrate success
 head(unique(Teams[[fkt[1L]]]))
 ```
@@ -126,7 +126,7 @@ For example, we could do the following to convert all `factor` columns to `chara
 ```{r sd_as_logical}
 fct_idx = Teams[, which(sapply(.SD, is.factor))] # column numbers to show the class changing
 str(Teams[[fct_idx[1L]]])
-#->Teams[ , names(.SD) := lapply(.SD, as.character), .SDcols = is.factor]
+Teams[ , names(.SD) := lapply(.SD, as.character), .SDcols = is.factor]
 str(Teams[[fct_idx[1L]]])
 ```
 
@@ -134,7 +134,7 @@ Lastly, we can do pattern-based matching of columns in `.SDcols` to select all c
 
 ```{r sd_patterns}
 Teams[ , .SD, .SDcols = patterns('team')]
-#->Teams[ , names(.SD) := lapply(.SD, factor), .SDcols = patterns('team')]
+Teams[ , names(.SD) := lapply(.SD, factor), .SDcols = patterns('team')]
 ```
 
 ** A proviso to the above: *explicitly* using column numbers (like `DT[ , (1) := rnorm(.N)]`) is bad practice and can lead to silently corrupted code over time if column positions change. Even implicitly using numbers can be dangerous if we don't keep smart/strict control over the ordering of when we create the numbered index and when we use it.
@@ -145,7 +145,7 @@ Varying model specification is a core feature of robust statistical analysis. Le
 
 Here's a short script leveraging the power of `.SD` which explores this question:
 
-```{rsd_for_lm, cache = FALSE, fig.cap="Fit OLS coefficient on W, various specifications, depicted as bars with distinct colors."}
+```{r sd_for_lm, cache = FALSE, fig.cap="Fit OLS coefficient on W, various specifications, depicted as bars with distinct colors."}
 # this generates a list of the 2^k possible extra variables
 #   for models of the form ERA ~ G + (...)
 extra_var = c('yearID', 'teamID', 'G', 'L')
