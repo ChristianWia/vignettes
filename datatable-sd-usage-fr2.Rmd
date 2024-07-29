@@ -1,19 +1,17 @@
 ---
-title: "Using .SD for Data Analysis"
+title: "Utiliser .SD pour l'analyse de données"
 date: "`r Sys.Date()`"
 output:
-  html_document:
-    df_print: paged
-  markdown::html_format: null
-options: null
-toc: yes
-number_sections: yes
-meta: null
-css:
-- default
-- css/toc.css
-vignette: |
-  %\VignetteIndexEntry{Using .SD for Data Analysis} %\VignetteEngine{knitr::knitr} \usepackage[utf8]{inputenc}
+  markdown::html_format:
+    options:
+      toc: true
+      number_sections: true
+    meta:
+      css: [default, css/toc.css]
+vignette: >
+  %\VignetteIndexEntry{Using .SD for Data Analysis}
+  %\VignetteEngine{knitr::knitr}
+  \usepackage[utf8]{inputenc}
 ---
 
 ```{r, echo = FALSE, message = FALSE}
