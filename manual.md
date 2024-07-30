@@ -1,6 +1,8 @@
 ----
 * E N   C O N S T R U C T I O N  
 ----
+# Overview
+
 Au moment où je suis passé j'ai pris une photo des vignettes courantes que j'ai recopiées en local dans -> https://github.com/ChristianWia/vignettes/tree/main/vignettes
 
 j'ai référencé le début de mes investigations dans -> https://github.com/Rdatatable/data.table/issues/6221#issuecomment-2211264589
@@ -24,9 +26,10 @@ md2po datatable-intro-fr.Rmd --quiet --save --po-filepath e:/datatable-intro-fr.
 
 L'utilisation de md2po extrait ce qu'il y a entre les parties de code. La découpe faite par l'outil est assez fine. Elle suit la structure du paragraphe original. Les parties à traduire sont relativement petites (1 à 3 phrases en général) ce qui est plus agréable que d'avoir à traduire des gros blocs de texte. 
 
+## Entete Poedit
+
 Ajouter le header Poedit au début du .po pour préparer le fichier à Poedit :
 
-#
 msgid ""
 msgstr ""
 "Project-Id-Version: cluster 2.1.6\n"
@@ -58,6 +61,8 @@ po2md e:/datatable-intro-fr.Rmd --wrapwidth 0 --pofiles e:/datatable-intro-fr.po
 ce qui donne le fichier  datatable-intro-fr2.Rmd
 
 je vérifie mon travail en ouvrant datatable-intro-fr2.Rmd dans R studio et en passant knitr pour avoir un joli datatable-intro-fr2.html dans le navigateur.
+
+### Problème des inclusions de code
 
 Zut des fautes :
 ==> rmarkdown::render('E:/datatable-intro-fr2.Rmd',  encoding = 'UTF-8');
@@ -105,6 +110,8 @@ knitr::opts_chunk$set(
 
 S'il n'y a pas de fautes de génération on peut déjà avoir un aperçu dans la fenetre Viewer de Rstudio
 
+### Problème des inclusions de code indentées
+
 Parcourir le texte. Il peut y avoir des problèmes d'indentation du texte (présence d'un char TAB avant le texte):
   ```r
   flights["XYZ"]
@@ -126,7 +133,7 @@ qu'il faut reprendre manuellement en :
    #    origin year month day dep_time sched_dep_time dep_delay arr_time sched_arr_time arr_delay carrier flight tailnum ...
    # 1:    XYZ   NA    NA  NA       NA             NA        NA       NA             NA        NA      NA     NA      NA ...
    ```
-
+### Problèmes des inclusion de code avec paramètres
 
 Chercher tous les ```{r et repérer ceux qui ne sont pas fermés par } et avancer avec le bouton Next : 
 
@@ -152,6 +159,53 @@ flights[ , ..select_cols]
 ```
 Suivre le fichier directeur pour cela.
 
+## Commandes R relatives aux vignettes
+
+### Afficher les vignettes disponibles
+
+### Installer une version officielle de data.table from CRAN
+
+### Installer la version de développement de data.table from Github Master 
+
+## Impact de la locale sur la traduction des vignettes 
+
+Si on part du principe que la vignette traduite est clonée sur la vignette EN (même YAML, même squelette), certains elements sont néanmoins à prendre en compte.
+
+
+1 vignettes qui n'accèdent pas à des ressoucres communes : 
+ no pb,  seule la vignette .Rmd est à traduire 
+ l'emplacement de la vignette est libre (une fois que l'on aura statué l'arborescence des vignettes traduites) 
+
+2 vignette qui accede à des ressources communes :
+Ex: datatable-sd-usage.Rmd qui accède au contenu des répertoires ./css et ./plots
+Dans ce cas la vignette traduite doit se situer parmis les autres vignettes pour bénéficier de la même arborescence.
+
+2.1 accès au CSS :
+Le CSS est partagé entre les vignettes pour le menu (actuellement). 
+Il est independant de la locale mais peut etre pas toujours, si on doit différencier les scripts LTR et RTL
+
+2.2 accès aux images ou autres medias :
+
+2.2.1 médias indépendants de la locale :
+Par exemple des image où il n'y a pas de texte anglais.
+ no pb - on laisse les transclusions anglaises existantes
+
+2.2.2 medias dépendants de la locale :
+C'est le cas des schémas, des architectures, des interfaces, des flux, des tableurs... où figure du texte EN. 
+De plus si le .Rmd décrit ce qu'il y a sur l'image il faut assurer la cohérence.
+
+2.2.2.1 le .Rmd ne décrit pas ce qu'il y a sur l'image 
+ no pb  on garde l'image EN
+
+2.2.2.2 le .Rmd décrit ce qu'il y a sur l'image 
+
+2.2.2.2.1  soit on garde l'image anglaise :
+Dans ce cas, si le .Rmd décrit ce qu'il y a sur l'image, le texte traduit doit reprendre les termes anglais pour la cohérence.
+
+2.2.2.2.2  soit on crée un image locale (*) :
+Dans ce cas l'image, si le .Rmd décrit ce qu'il y a sur l'image le .Rmd doivent avoir un texte traduit pour la cohérence.
+
+(*) Je crois qu'il est possible d'agir sur le texte contenu pour modifier les images .svg
 
 ## Issues
 
