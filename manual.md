@@ -167,6 +167,25 @@ Suivre le fichier directeur pour cela.
 
 ### Installer la version de développement de data.table from Github Master 
 
+Vous pouvez utiliser la méthode décrite dans -> [Rdatatable/data.table#installation](https://github.com/Rdatatable/data.table#installation)
+ou bien passer par *devtools*
+```
+library(devtools)
+install_github("Rdatatable/data.table")
+```
+
+## Inconvénients de la méthode des .po
+
+### Appel des phrases traduites
+
+Un peu comme le code R appelle les messages traduits des fichiers .po , il faudrait une vignette "skeleton" qui appelle les messages traduits pour chacune des vignettes ...-fr.Rmd  ...-es.Rmd etc...
+
+Ou on ignore complètement la mécanique des fichiers .po et on traduit manuellement et directement les blocs de texte qui se trouvent entre les inclusions de code R dans le fichier .Rmd - c'est plus simple mais on ne bénéficie plus des fonctions de Poedit.
+
+### Shunter le processus pour les mises à jour
+
+Le produit -fr.RMD est ici un produit secondaire du -fr.po . C'est à dire qu'il n'existe que si ce dernier est défini. L'inconvénient avec le temps, et surtout parce que ça va plus vite, est que l'on risque de corriger directement le produit -fr.Rmd en oubliant de mettre à jour le -fr.po    
+
 ## Impact de la locale sur la traduction des vignettes 
 
 Si on part du principe que la vignette traduite est clonée sur la vignette EN (même YAML, même squelette), certains elements sont néanmoins à prendre en compte.
