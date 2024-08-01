@@ -186,12 +186,104 @@ Ou on ignore complètement la mécanique des fichiers .po et on traduit manuelle
 
 Le produit -fr.RMD est ici un produit secondaire du -fr.po . C'est à dire qu'il n'existe que si ce dernier est défini. L'inconvénient avec le temps, et surtout parce que ça va plus vite, est que l'on risque de corriger directement le produit -fr.Rmd en oubliant de mettre à jour le -fr.po    
 
+## Traduire néanmoins des parties de code
+
+Dans le cas ci-dessous le texte doit être repris dans le -fr.Rmd manuellement (n'apparait pas dans le fichier .po) pour être traduit en FR sinon le graphe reste avec le texte anglais. Chunk initial : 
+
+```
+{r group_lm, results = 'hide', fig.cap="A histogram depicting the distribution of fitted coefficients. It is vaguely bell-shaped and concentrated around -.2"}
+# Overall coefficient for comparison
+overall_coef = Pitching[ , coef(lm(ERA ~ W))['W']]
+# use the .N > 20 filter to exclude teams with few observations
+Pitching[ , if (.N > 20L) .(w_coef = coef(lm(ERA ~ W))['W']), by = teamID
+          ][ , hist(w_coef, 20L, las = 1L,
+                    xlab = 'Fitted Coefficient on W',
+                    ylab = 'Number of Teams', col = 'darkgreen',
+                    main = 'Team-Level Distribution\nWin Coefficients on ERA')]
+abline(v = overall_coef, lty = 2L, col = 'red')
+```
+deviendra : 
+```
+{r group_lm, results = 'hide', fig.cap="Histogramme décrivant la distribution des coefficients ajustés. La courbe représente à peut près une cloche centrée sur -0,2"}
+# Overall coefficient for comparison
+overall_coef = Pitching[ , coef(lm(ERA ~ W))['W']]
+# use the .N > 20 filter to exclude teams with few observations
+Pitching[ , if (.N > 20L) .(w_coef = coef(lm(ERA ~ W))['W']), by = teamID
+          ][ , hist(w_coef, 20L, las = 1L,
+                    xlab = 'Coefficient ajusté sur W',
+                    ylab = 'Nombre d\'équipes', col = 'darkgreen',
+                    main = 'Distribution du niveau des équipes\nCoefficients Win sur ERA')]
+abline(v = overall_coef, lty = 2L, col = 'red')
+```
+N'oubliez pas de protéger les apostrophes avec un catactère backslash \ .
+
+Ou bien également:
+```
+{r sd_for_lm, cache = FALSE, fig.cap="Fit OLS coefficient on W, various specifications, depicted as bars with distinct colors."}
+# this generates a list of the 2^k possible extra variables
+#   for models of the form ERA ~ G + (...)
+extra_var = c('yearID', 'teamID', 'G', 'L')
+models = unlist(
+  lapply(0L:length(extra_var), combn, x = extra_var, simplify = FALSE),
+  recursive = FALSE
+)
+
+# here are 16 visually distinct colors, taken from the list of 20 here:
+#   https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
+col16 = c('#e6194b', '#3cb44b', '#ffe119', '#0082c8',
+          '#f58231', '#911eb4', '#46f0f0', '#f032e6',
+          '#d2f53c', '#fabebe', '#008080', '#e6beff',
+          '#aa6e28', '#fffac8', '#800000', '#aaffc3')
+
+par(oma = c(2, 0, 0, 0))
+lm_coef = sapply(models, function(rhs) {
+  # using ERA ~ . and data = .SD, then varying which
+  #   columns are included in .SD allows us to perform this
+  #   iteration over 16 models succinctly.
+  #   coef(.)['W'] extracts the W coefficient from each model fit
+  Pitching[ , coef(lm(ERA ~ ., data = .SD))['W'], .SDcols = c('W', rhs)]
+})
+barplot(lm_coef, names.arg = sapply(models, paste, collapse = '/'),
+        main = 'Wins Coefficient\nWith Various Covariates',
+        col = col16, las = 2L, cex.names = 0.8)
+```
+qui donnera : 
+```
+{r sd_for_lm, cache = FALSE, fig.cap="Ajustement du coefficient OLS sur W, diverses spécifications, décrites par les barres de couleur différente."}
+# this generates a list of the 2^k possible extra variables
+#   for models of the form ERA ~ G + (...)
+extra_var = c('yearID', 'teamID', 'G', 'L')
+models = unlist(
+  lapply(0L:length(extra_var), combn, x = extra_var, simplify = FALSE),
+  recursive = FALSE
+)
+
+# here are 16 visually distinct colors, taken from the list of 20 here:
+#   https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
+col16 = c('#e6194b', '#3cb44b', '#ffe119', '#0082c8',
+          '#f58231', '#911eb4', '#46f0f0', '#f032e6',
+          '#d2f53c', '#fabebe', '#008080', '#e6beff',
+          '#aa6e28', '#fffac8', '#800000', '#aaffc3')
+
+par(oma = c(2, 0, 0, 0))
+lm_coef = sapply(models, function(rhs) {
+  # using ERA ~ . and data = .SD, then varying which
+  #   columns are included in .SD allows us to perform this
+  #   iteration over 16 models succinctly.
+  #   coef(.)['W'] extracts the W coefficient from each model fit
+  Pitching[ , coef(lm(ERA ~ ., data = .SD))['W'], .SDcols = c('W', rhs)]
+})
+barplot(lm_coef, names.arg = sapply(models, paste, collapse = '/'),
+        main = 'Coefficient Wins \navec diverses covariables',
+        col = col16, las = 2L, cex.names = 0.8)
+```
+
 ## Impact de la locale sur la traduction des vignettes 
 
 Si on part du principe que la vignette traduite est clonée sur la vignette EN (même YAML, même squelette), certains elements sont néanmoins à prendre en compte.
 
 
-1 vignettes qui n'accèdent pas à des ressoucres communes : 
+1 vignettes qui n'accèdent pas à des ressources communes : 
  no pb,  seule la vignette .Rmd est à traduire 
  l'emplacement de la vignette est libre (une fois que l'on aura statué l'arborescence des vignettes traduites) 
 
