@@ -137,7 +137,7 @@ apportant un peu de complexité à chaque fois.
 x[i, on, nomatch]
 | |  |   |
 | |  |   \__ Si NULL, renvoie seulement les lignes liées des tables x et i
-| |  \____ vecteur de caractères ou liste définissant la logique de correspondance
+| |  \____ vecteur de char ou liste définissant la logique de correspondance
 | \_____ data.table primaire, liste ou data.frame
 \____ data.table secondaire
 ```
@@ -825,13 +825,13 @@ de `ProductPriceHistory`.
 
 ***
 
-## Référence
+## Références
 
 - *Comprendre les jointures glissantes de data.table*:
 https://www.r-bloggers.com/2016/06/understanding-data-table-rolling-joins/
 - *Demi-jointure avec data.table*:
 https://stackoverflow.com/questions/18969420/perform-a-semi-join-with-data-table
-- *Jointure croisée avec with data.table*:
+- *Jointure croisée avec data.table*:
 https://stackoverflow.com/questions/10600060/how-to-do-cross-join-in-r
 - *Comment réaliser une jointure complète à l'aide de data.table ?*:
 https://stackoverflow.com/questions/15170741/how-does-one-do-a-full-join-using-data-table
