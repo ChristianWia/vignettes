@@ -4,7 +4,7 @@ date: "`r Sys.Date()`"
 output:
   markdown::html_format
 vignette: >
-  %\VignetteIndexEntry{Introduction à data.table}
+  %\VignetteIndexEntry{Jointures avec data.table}
   %\VignetteEngine{knitr::knitr}
   \usepackage[utf8]{inputenc}
 ---
@@ -69,7 +69,7 @@ Products = data.table(
 Products
 ```
 
-1. Définir une `data.table` donnant le pourcentage des taxes à appliquer aux
+2. Définir une `data.table` donnant le pourcentage des taxes à appliquer aux
 produits traités en fonction de leurs unités.
 
 ```{r}
@@ -82,7 +82,7 @@ NewTax = data.table(
 NewTax
 ```
 
-1. Définir une `data.table` simulant les produits reçus chaque lundi avec des
+3. Définir une `data.table` simulant les produits reçus chaque lundi avec des
 `product_id` non présents dans la table `Products` .
 
 ```{r}
@@ -98,7 +98,7 @@ ProductReceived = data.table(
 ProductReceived
 ```
 
-1. Définir une `data.table` pour afficher des promotions certains jours de la
+4. Définir une `data.table` pour afficher des promotions certains jours de la
 semaine avec un autre `product_id` qui n'est pas dans la table `Products` .
 
 ```{r}
@@ -123,23 +123,23 @@ ProductSales = data.table(
 ProductSales
 ```
 
-## 2. Syntaxe le la jointure `data.table`
+## 2. Syntaxe de la jointure `data.table`
 
 Avant de voir les avantages de la syntaxe `data.table` pour faire des opérations
 de jointure nous devons savoir quels arguments peuvent nous aider à les réaliser
 avec succès.
 
-The next diagram shows a description for each basic argument. In the following
-sections we will show how to use each of them and add more complexity little by
-little.
+Le diagramme suivant affiche une description pour chaque argument de base. Dans les
+sections suivantes nous verrons progressivement comment les utiliser tout en 
+apportant un peu de complexité à chaque fois.
 
 ```
 x[i, on, nomatch]
 | |  |   |
-| |  |   \__ If NULL only returns rows linked in x and i tables
-| |  \____ a character vector o list defining match logict
-| \_____ primary data.table, list or data.frame
-\____ secondary data.table
+| |  |   \__ Si NULL, renvoie seulement les lignes liées des tables x et i
+| |  \____ vecteur de caractères ou liste définissant la logique de correspondance
+| \_____ data.table primaire, liste ou data.frame
+\____ data.table secondaire
 ```
 
 > N'oubliez pas que l'ordre standard des arguments dans data.table est
@@ -154,13 +154,13 @@ combiner.
 
 La relation entre les tables peut être :
 
-- **De un à un**: lorsque chaque valeur sélectionnée est unique dans chaque table.
-- **De un à plusieurs** : lorsque certaines valeurs sélectionnées sont répétées
+- **De un vers un**: lorsque chaque valeur sélectionnée est unique dans chaque table.
+- **De un vers plusieurs** : lorsque certaines valeurs sélectionnées sont répétées
 dans une table et à la fois uniques dans l'autre.
-- **De plusieurs à plusieurs** : lorsque les valeurs sélectionnées sont répétées
+- **De plusieurs vers plusieurs** : lorsque les valeurs sélectionnées sont répétées
 plusieurs fois dans chaque table.
 
-Dans laplupart des exemples suivants nous réaliserons des correspondances *un
+Dans la plupart des exemples suivants nous réaliserons des correspondances *de un
 vers plusieurs* , mais nous prendrons aussi le temps d'expliquer les ressources
 disponibles pour réaliser les correspondances *de plusieurs vers plusieurs* .
 
