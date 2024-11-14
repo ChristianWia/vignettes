@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>Jointures avec data.table</title>
+<style type="text/css">
+/**
+ * Prism.s theme ported from highlight.js's xcode style
+ */
+pre code {
+  padding: 1em;
+}
+.token.comment {
+  color: #007400;
+}
+.token.punctuation {
+  color: #999;
+}
+.token.tag,
+.token.selector {
+  color: #aa0d91;
+}
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol {
+  color: #1c00cf;
+}
+.token.property,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin {
+  color: #c41a16;
+}
+.token.inserted {
+  background-color: #ccffd8;
+}
+.token.deleted {
+  background-color: #ffebe9;
+}
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string {
+  color: #9a6e3a;
+}
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: #836c28;
+}
+.token.function,
+.token.class-name {
+  color: #DD4A68;
+}
+.token.regex,
+.token.important,
+.token.variable {
+  color: #5c2699;
+}
+.token.important,
+.token.bold {
+  font-weight: bold;
+}
+.token.italic {
+  font-style: italic;
+}
+</style>
+<style type="text/css">
+body {
+  font-family: sans-serif;
+  max-width: 800px;
+  margin: auto;
+  padding: 1em;
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+body, .footnotes, code { font-size: .9em; }
+li li { font-size: .95em; }
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+pre, img { max-width: 100%; }
+pre, pre:hover {
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+pre code {
+  display: block;
+  overflow-x: auto;
+}
+code { font-family: 'DejaVu Sans Mono', 'Droid Sans Mono', 'Lucida Console', Consolas, Monaco, monospace; }
+:not(pre) > code, code[class] { background-color: #F8F8F8; }
+code.language-undefined, pre > code:not([class]) {
+  background-color: inherit;
+  border: 1px solid #eee;
+}
+table {
+  margin: auto;
+  border-top: 1px solid #666;
+}
+table thead th { border-bottom: 1px solid #ddd; }
+th, td { padding: 5px; }
+thead, tfoot, tr:nth-child(even) { background: #eee; }
+blockquote {
+  color: #666;
+  margin: 0;
+  padding-left: 1em;
+  border-left: 0.5em solid #eee;
+}
+hr, .footnotes::before { border: 1px dashed #ddd; }
+.frontmatter { text-align: center; }
+#TOC .numbered li { list-style: none; }
+#TOC .numbered { padding-left: 0; }
+#TOC .numbered ul { padding-left: 1em; }
+table, .body h2 { border-bottom: 1px solid #666; }
+.body .appendix, .appendix ~ h2 { border-bottom-style: dashed; }
+.footnote-ref a::before { content: "["; }
+.footnote-ref a::after { content: "]"; }
+section.footnotes::before {
+  content: "";
+  display: block;
+  max-width: 20em;
+}
+
+@media print {
+  body {
+    font-size: 12pt;
+    max-width: 100%;
+  }
+  tr, img { page-break-inside: avoid; }
+}
+@media only screen and (min-width: 992px) {
+  pre { white-space: pre; }
+}
+</style>
+</head>
+<body>
+<div class="frontmatter">
+<div class="title"><h1>Jointures avec data.table</h1></div>
+<div class="author"><h2></h2></div>
+<div class="date"><h3>2024-11-14</h3></div>
+</div>
+<div class="body">
+<p>Dans cette vignette nous apprendrons à réaliser les opérations de jointure en
+utilisant les ressources de la syntaxe <code>data.table</code>.</p>
+<p>Cela suppose que vous êtes déjà familiarisé avec la syntaxe <code>data.table</code> . Si ce
+n’est pas le cas, reportez-vous aux vignettes suivantes :</p>
+<ul>
+<li><code>vignette(&quot;datatable-intro&quot;, package=&quot;data.table&quot;)</code></li>
+<li><code>vignette(&quot;datatable-reference-semantics&quot;, package=&quot;data.table&quot;)</code></li>
+<li><code>vignette(&quot;datatable-keys-fast-subset&quot;, package=&quot;data.table&quot;)</code></li>
+</ul>
+<hr />
+<h2 id="1-d-finissons-nos-donn-es-d-exemple">1. Définissons nos données d’exemple</h2>
+<p>Pour illustrer la méthode proposée avec des exemples de la vie courante, nous
+allons simuler une <strong>base de données normalisée</strong> à partir d’un petit
+supermarché en réalisant les étapes suivantes :</p>
+<ol>
+<li>Définir une <code>data.table</code> où chaque produit est représenté par une ligne avec
+quelques attributs, mais en laissant un produit sans <code>id</code> pour montrer
+comment d’environnement réagit avec les <em><strong>valeurs absentes</strong></em>.</li>
+</ol>
+<pre><code class="language-r">Products = data.table(
+  id = c(1:4,
+         NA_integer_),
+  name = c(&quot;banana&quot;,
+           &quot;carrots&quot;,
+           &quot;popcorn&quot;,
+           &quot;soda&quot;,
+           &quot;toothpaste&quot;),
+  price = c(0.63,
+            0.89,
+            2.99,
+            1.49,
+            2.99),
+  unit = c(&quot;unit&quot;,
+           &quot;lb&quot;,
+           &quot;unit&quot;,
+           &quot;ounce&quot;,
+           &quot;unit&quot;),
+  type = c(rep(&quot;natural&quot;, 2L),
+           rep(&quot;processed&quot;, 3L))
+)
+
+Products
+#       id       name price   unit      type
+#    &lt;int&gt;     &lt;char&gt; &lt;num&gt; &lt;char&gt;    &lt;char&gt;
+# 1:     1     banana  0.63   unit   natural
+# 2:     2    carrots  0.89     lb   natural
+# 3:     3    popcorn  2.99   unit processed
+# 4:     4       soda  1.49  ounce processed
+# 5:    NA toothpaste  2.99   unit processed
+</code></pre>
+<ol>
+<li>Définir une <code>data.table</code> donnant le pourcentage des taxes à appliquer aux
+produits traités en fonction de leurs unités.</li>
+</ol>
+<pre><code class="language-r">NewTax = data.table(
+  unit = c(&quot;unit&quot;,&quot;ounce&quot;),
+  type = &quot;processed&quot;,
+  tax_prop = c(0.65, 0.20)
+)
+
+NewTax
+#      unit      type tax_prop
+#    &lt;char&gt;    &lt;char&gt;    &lt;num&gt;
+# 1:   unit processed     0.65
+# 2:  ounce processed     0.20
+</code></pre>
+<ol>
+<li>Définir une <code>data.table</code> simulant les produits reçus chaque lundi avec des
+<code>product_id</code> non présents dans la table <code>Products</code> .</li>
+</ol>
+<pre><code class="language-r">set.seed(2156)
+
+ProductReceived = data.table(
+  id = 1:10,
+  date = seq(from = as.IDate(&quot;2024-01-08&quot;), length.out = 10L, by = &quot;week&quot;),
+  product_id = sample(c(NA_integer_, 1:3, 6L), size = 10L, replace = TRUE),
+  count = sample(c(50L, 100L, 150L), size = 10L, replace = TRUE)
+)
+
+ProductReceived
+#        id       date product_id count
+#     &lt;int&gt;     &lt;IDat&gt;      &lt;int&gt; &lt;int&gt;
+#  1:     1 2024-01-08         NA   150
+#  2:     2 2024-01-15          1   100
+#  3:     3 2024-01-22          6   100
+#  4:     4 2024-01-29          1   150
+#  5:     5 2024-02-05          2    50
+#  6:     6 2024-02-12          1   150
+#  7:     7 2024-02-19          2   150
+#  8:     8 2024-02-26          2   100
+#  9:     9 2024-03-04          1   100
+# 10:    10 2024-03-11          3   150
+</code></pre>
+<ol>
+<li>Définir une <code>data.table</code> pour afficher des promotions certains jours de la
+semaine avec un autre <code>product_id</code> qui n’est pas dans la table <code>Products</code> .</li>
+</ol>
+<pre><code class="language-r">sample_date = function(from, to, size, ...){
+  all_days = seq(from = from, to = to, by = &quot;day&quot;)
+  weekdays = all_days[wday(all_days) %in% 2:6]
+  days_sample = sample(weekdays, size, ...)
+  days_sample_desc = sort(days_sample)
+  days_sample_desc
+}
+
+set.seed(5415)
+
+ProductSales = data.table(
+  id = 1:10,
+  date = ProductReceived[, sample_date(min(date), max(date), 10L)],
+  product_id = sample(c(1:3, 7L), size = 10L, replace = TRUE),
+  count = sample(c(50L, 100L, 150L), size = 10L, replace = TRUE)
+)
+
+
+ProductSales
+#        id       date product_id count
+#     &lt;int&gt;     &lt;IDat&gt;      &lt;int&gt; &lt;int&gt;
+#  1:     1 2024-01-08          7    50
+#  2:     2 2024-01-11          2   150
+#  3:     3 2024-01-18          1    50
+#  4:     4 2024-01-25          1   100
+#  5:     5 2024-01-26          3   100
+#  6:     6 2024-02-02          3   150
+#  7:     7 2024-02-06          2   150
+#  8:     8 2024-02-15          7   150
+#  9:     9 2024-02-27          1   150
+# 10:    10 2024-03-08          1    50
+</code></pre>
+<h2 id="2-syntaxe-le-la-jointure-data-table">2. Syntaxe le la jointure <code>data.table</code></h2>
+<p>Avant de voir les avantages de la syntaxe <code>data.table</code> pour faire des opérations
+de jointure nous devons savoir quels arguments peuvent nous aider à les réaliser
+avec succès.</p>
+<p>The next diagram shows a description for each basic argument. In the following
+sections we will show how to use each of them and add more complexity little by
+little.</p>
+<pre><code>x[i, on, nomatch]
+| |  |   |
+| |  |   \__ If NULL only returns rows linked in x and i tables
+| |  \____ a character vector o list defining match logict
+| \_____ primary data.table, list or data.frame
+\____ secondary data.table
+</code></pre>
+<blockquote>
+<p>N’oubliez pas que l’ordre standard des arguments dans data.table est
+<code>dt[i, j, by]</code>. Pour les opérations de jointure, il est recommandé de passer
+les arguments <code>on</code> et <code>nomatch</code> par nom pour éviter d’utiliser <code>j</code> et <code>by</code> quand
+ce n’est pas nécessaire.</p>
+</blockquote>
+<h2 id="3-jointures-quilibr-es">3. Jointures équilibrées</h2>
+<p>C’est le cas général et facile où il y a des éléments communs entre les tables à
+combiner.</p>
+<p>La relation entre les tables peut être :</p>
+<ul>
+<li><strong>De un à un</strong>: lorsque chaque valeur sélectionnée est unique dans chaque table.</li>
+<li><strong>De un à plusieurs</strong> : lorsque certaines valeurs sélectionnées sont répétées
+dans une table et à la fois uniques dans l’autre.</li>
+<li><strong>De plusieurs à plusieurs</strong> : lorsque les valeurs sélectionnées sont répétées
+plusieurs fois dans chaque table.</li>
+</ul>
+<p>Dans laplupart des exemples suivants nous réaliserons des correspondances <em>un
+vers plusieurs</em> , mais nous prendrons aussi le temps d’expliquer les ressources
+disponibles pour réaliser les correspondances <em>de plusieurs vers plusieurs</em> .</p>
+<h3 id="3-1-jointure-droite">3.1. Jointure droite</h3>
+<p>Utilisez cette méthode pour combiner les colonnes de deux tables en se basant sur
+une ou plusieurs références mais <em><strong>en gardant toutes les lignes présentes dans
+la table située à droite (entre crochets)</strong></em>.</p>
+<p>Dans le contexte de notre supermarché nous pouvons réaliser une jointure droite
+pour voir davantage de détails à propos des produits reçus parce que c’est une
+relation de <em>un vers plusieurs</em> en passant un vecteur dans l’argument <code>on</code>.</p>
+<pre><code class="language-r">Products[ProductReceived,
+         on = c(id = &quot;product_id&quot;)]
+#        id       name price   unit      type  i.id       date count
+#     &lt;int&gt;     &lt;char&gt; &lt;num&gt; &lt;char&gt;    &lt;char&gt; &lt;int&gt;     &lt;IDat&gt; &lt;int&gt;
+#  1:    NA toothpaste  2.99   unit processed     1 2024-01-08   150
+#  2:     1     banana  0.63   unit   natural     2 2024-01-15   100
+#  3:     6       &lt;NA&gt;    NA   &lt;NA&gt;      &lt;NA&gt;     3 2024-01-22   100
+#  4:     1     banana  0.63   unit   natural     4 2024-01-29   150
+#  5:     2    carrots  0.89     lb   natural     5 2024-02-05    50
+#  6:     1     banana  0.63   unit   natural     6 2024-02-12   150
+#  7:     2    carrots  0.89     lb   natural     7 2024-02-19   150
+#  8:     2    carrots  0.89     lb   natural     8 2024-02-26   100
+#  9:     1     banana  0.63   unit   natural     9 2024-03-04   100
+# 10:     3    popcorn  2.99   unit processed    10 2024-03-11   150
+</code></pre>
+<p>Comme beaucoup de choses ont changé, nous allons expliquer les nouvelles
+caractéristiques dans les groupes suivants :</p>
+<ul>
+<li>
+<p><strong>Niveau colonne</strong></p>
+<ul>
+<li>Le <em>premier groupe</em> de colonnes dans le nouveau data.table vient de la table
+<code>x</code> .</li>
+<li>Le <em>second groupe</em> de colonnes de la nouvelle data.table vient de la table <code>i</code>.</li>
+<li>Si l’opération de jointure fait apparaître un <strong>conflit de nom</strong> (les deux
+tables ont le même nom de colonne) le <em><strong>prefixe</strong></em> <code>i.</code> est ajouté aux noms
+des colonnes de la <strong>table de droite</strong> (table en position <code>i</code>).</li>
+</ul>
+</li>
+<li>
+<p><strong>Niveau ligne</strong></p>
+<ul>
+<li>Le <code>product_id</code> qui est absent, mais présent dans la table <code>ProductReceived</code> à
+la ligne 1 a été sélectionné avec le <code>id</code> absent de la table <code>Products</code>, donc
+<em><strong>les valeurs <code>NA</code> sont traitées comme les autres valeurs</strong></em>.</li>
+<li>Toutes les lignes de la table <code>i</code> ont été gardées y compris :
+<ul>
+<li>Les lignes qui ne correspondent pas, comme celle avec <code>product_id = 6</code>.</li>
+<li>Lignes qui répètent les même <code>product_id</code> plusieurs fois.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h4 id="3-1-1-jointure-avec-un-argument-de-liste">3.1.1. Jointure avec un argument de liste</h4>
+<p>Si vous suivez la vignette, vous avez pu voir que nous avons utilisé un vecteur
+pour définir les relations entre les tables dans l’argument <code>on</code>, ce qui
+réellement utile si vous <strong>créez vos propres fonctions</strong>, mais une autre
+alternative est d’utiliser une <strong>liste</strong> pour définir les colonnes à
+sélectionner.</p>
+<p>Pour utiliser cette capacité, nous avons a disposition les alternatives
+suivantes :</p>
+<ul>
+<li>Inclure les colonnes associées dans la fonction R de base <code>list</code> .</li>
+</ul>
+<pre><code class="language-{r,">Products[ProductReceived,
+         on = list(id = product_id)]
+</code></pre>
+<ul>
+<li>Inclure les colonnes associées dans la data.table <code>list</code>alias <code>.</code>.</li>
+</ul>
+<pre><code class="language-{r,">Products[ProductReceived,
+         on = .(id = product_id)]
+</code></pre>
+<h4 id="3-1-2-alternatives-pour-d-finir-l-argument-on">3.1.2. Alternatives pour définir l’argument <code>on</code></h4>
+<p>Dans tous les exemples précédents, nous avons passé les noms des colonnes à
+sélectionner avec l’argument <code>on</code> mais <code>data.table</code> possède également des
+alternatives à cette syntaxe.</p>
+<ul>
+<li><strong>Jointure naturelle</strong>: sélectionne les colonnes pour réaliser la
+correspondance en fonction des noms des colonnes communes. Pour illustrer
+cette méthode, modifions la colonne de la table <code>Products</code> de <code>id</code> en
+<code>product_id</code> et utilisons le mot clé <code>.NATURAL</code>.</li>
+</ul>
+<pre><code class="language-r">ProductsChangedName = setnames(copy(Products), &quot;id&quot;, &quot;product_id&quot;)
+ProductsChangedName
+#    product_id       name price   unit      type
+#         &lt;int&gt;     &lt;char&gt; &lt;num&gt; &lt;char&gt;    &lt;char&gt;
+# 1:          1     banana  0.63   unit   natural
+# 2:          2    carrots  0.89     lb   natural
+# 3:          3    popcorn  2.99   unit processed
+# 4:          4       soda  1.49  ounce processed
+# 5:         NA toothpaste  2.99   unit processed
+
+ProductsChangedName[ProductReceived, on = .NATURAL]
+#     product_id       name price   unit      type    id       date count
+#          &lt;int&gt;     &lt;char&gt; &lt;num&gt; &lt;char&gt;    &lt;char&gt; &lt;int&gt;     &lt;IDat&gt; &lt;int&gt;
+#  1:         NA toothpaste  2.99   unit processed     1 2024-01-08   150
+#  2:          1     banana  0.63   unit   natural     2 2024-01-15   100
+#  3:          6       &lt;NA&gt;    NA   &lt;NA&gt;      &lt;NA&gt;     3 2024-01-22   100
+#  4:          1     banana  0.63   unit   natural     4 2024-01-29   150
+#  5:          2    carrots  0.89     lb   natural     5 2024-02-05    50
+#  6:          1     banana  0.63   unit   natural     6 2024-02-12   150
+#  7:          2    carrots  0.89     lb   natural     7 2024-02-19   150
+#  8:          2    carrots  0.89     lb   natural     8 2024-02-26   100
+#  9:          1     banana  0.63   unit   natural     9 2024-03-04   100
+# 10:          3    popcorn  2.99   unit processed    10 2024-03-11   150
+</code></pre>
+<ul>
+<li><strong>Jointure par clé</strong>: sélectionne les colonnes pour rechercher la
+correspondance  en fonction des colonnes clé quelque soit leur nom. Pour
+illustrer cette méthode, nous devons définir les clés dans le même ordre pour
+les deux tables.</li>
+</ul>
+<pre><code class="language-r">ProductsKeyed = setkey(copy(Products), id)
+key(ProductsKeyed)
+# [1] &quot;id&quot;
+
+ProductReceivedKeyed = setkey(copy(ProductReceived), product_id)
+key(ProductReceivedKeyed)
+# [1] &quot;product_id&quot;
+
+ProductsKeyed[ProductReceivedKeyed]
+# Key: &lt;id&gt;
+#        id       name price   unit      type  i.id       date count
+#     &lt;int&gt;     &lt;char&gt; &lt;num&gt; &lt;char&gt;    &lt;char&gt; &lt;int&gt;     &lt;IDat&gt; &lt;int&gt;
+#  1:    NA toothpaste  2.99   unit processed     1 2024-01-08   150
+#  2:     1     banana  0.63   unit   natural     2 2024-01-15   100
+#  3:     1     banana  0.63   unit   natural     4 2024-01-29   150
+#  4:     1     banana  0.63   unit   natural     6 2024-02-12   150
+#  5:     1     banana  0.63   unit   natural     9 2024-03-04   100
+#  6:     2    carrots  0.89     lb   natural     5 2024-02-05    50
+#  7:     2    carrots  0.89     lb   natural     7 2024-02-19   150
+#  8:     2    carrots  0.89     lb   natural     8 2024-02-26   100
+#  9:     3    popcorn  2.99   unit processed    10 2024-03-11   150
+# 10:     6       &lt;NA&gt;    NA   &lt;NA&gt;      &lt;NA&gt;     3 2024-01-22   100
+</code></pre>
+<h4 id="3-1-3-op-rations-apr-s-la-jointure">3.1.3. Opérations après la jointure</h4>
+<p>La plupart du temps après avoir terminé une jointure nous souhaitons faire des
+adaptations supplémentaires. Pour cela plusieurs alternatives vous sont
+proposées :</p>
+<ul>
+<li>Chaîner une nouvelle instruction en ajoutant une paire de crochets <code>[]</code>.</li>
+<li>En passant comme argument <code>j</code> une liste des colonnes que l’on veut conserver ou
+créer.</li>
+</ul>
+<p>Notre recommendation est d’utiliser la seconde alternative si possible, car elle
+est <strong>plus rapide</strong> et demande <strong>moins de mémoire</strong> que la première.</p>
+<h5 id="gestion-de-la-colonne-partag-e-names-avec-l-argument-j">Gestion de la colonne partagée Names avec l’argument j</h5>
+<p>L’argument <code>j</code> autorise plusieurs alternatives intéressantes pour gérer les
+jointures avec les tables en <strong>partageant les mêmes noms de plusieurs
+colonnes</strong>. Par défaut toutes les colonnes prennent leur source dans la table
+<code>x</code>, mais nous pouvons aussi utiliser le préfixe <code>x.</code> pour clarifier la source
+et utiliser le préfixe <code>i.</code> pour toutes les colonnes de la table déclarée dans
+l’argument <code>i</code> de la table <code>x</code>.</p>
+<p>Si nous retournons au petit supermarché, après avoir mis à jour la table
+<code>ProductReceived</code> avec la table <code>Products</code> , il semble pratique d’appliquer les
+modifications suivantes :</p>
+<ul>
+<li>Modifier le nom des colonnes de <code>id</code> en <code>product_id</code> et de <code>i.id</code> en
+<code>received_id</code>.</li>
+<li>Ajout de <code>total_value</code>.</li>
+</ul>
+<pre><code class="language-r">Products[
+  ProductReceived,
+  on = c(&quot;id&quot; = &quot;product_id&quot;),
+  j = .(product_id = x.id,
+        name = x.name,
+        price,
+        received_id = i.id,
+        date = i.date,
+        count,
+        total_value = price * count)
+]
+#     product_id       name price received_id       date count total_value
+#          &lt;int&gt;     &lt;char&gt; &lt;num&gt;       &lt;int&gt;     &lt;IDat&gt; &lt;int&gt;       &lt;num&gt;
+#  1:         NA toothpaste  2.99           1 2024-01-08   150       448.5
+#  2:          1     banana  0.63           2 2024-01-15   100        63.0
+#  3:         NA       &lt;NA&gt;    NA           3 2024-01-22   100          NA
+#  4:          1     banana  0.63           4 2024-01-29   150        94.5
+#  5:          2    carrots  0.89           5 2024-02-05    50        44.5
+#  6:          1     banana  0.63           6 2024-02-12   150        94.5
+#  7:          2    carrots  0.89           7 2024-02-19   150       133.5
+#  8:          2    carrots  0.89           8 2024-02-26   100        89.0
+#  9:          1     banana  0.63           9 2024-03-04   100        63.0
+# 10:          3    popcorn  2.99          10 2024-03-11   150       448.5
+</code></pre>
+<h5 id="r-sum-avec-on-dans-data-table">Résumé avec on dans data.table</h5>
+<p>Nous pouvons aussi utiliser cette alternative pour renvoyer les résultats agrégés
+enn fonction des colonnes présentes dans la table <code>x</code> .</p>
+<p>Par exemple on pourrait s’intéresser à combien on dépense à acheter des produits
+à chaque date quelque soit ces produits.</p>
+<pre><code class="language-r">dt1 = ProductReceived[
+  Products,
+  on = c(&quot;product_id&quot; = &quot;id&quot;),
+  by = .EACHI,
+  j = .(total_value_received  = sum(price * count))
+]
+
+
+dt2 = ProductReceived[
+  Products,
+  on = c(&quot;product_id&quot; = &quot;id&quot;),
+][, .(total_value_received  = sum(price * count)),
+  by = &quot;product_id&quot;
+]
+
+identical(dt1, dt2)
+# [1] TRUE
+</code></pre>
+<h4 id="3-1-4-jointure-bas-e-sur-plusieurs-colonnes">3.1.4. Jointure basée sur plusieurs colonnes</h4>
+<p>Jusqu’à présent, nous avons réalisé les jointures en se basant sur une colonne
+<code>data.table</code>, mais il est important de savoir que le package peut joindre des
+tables en prenant en compte plusieurs colonnes.</p>
+<p>Pour illustrer cela supposons que nous voulions ajouter <code>tax_prop</code> de <code>NewTax</code>
+pour <strong>mettre à jour</strong> la table <code>Products</code>.</p>
+<pre><code class="language-r">NewTax[Products, on = c(&quot;unit&quot;, &quot;type&quot;)]
+#      unit      type tax_prop    id       name price
+#    &lt;char&gt;    &lt;char&gt;    &lt;num&gt; &lt;int&gt;     &lt;char&gt; &lt;num&gt;
+# 1:   unit   natural       NA     1     banana  0.63
+# 2:     lb   natural       NA     2    carrots  0.89
+# 3:   unit processed     0.65     3    popcorn  2.99
+# 4:  ounce processed     0.20     4       soda  1.49
+# 5:   unit processed     0.65    NA toothpaste  2.99
+</code></pre>
+<h3 id="3-2-jointure-interne">3.2. Jointure interne</h3>
+<p>Utilisez cette méthode pour combiner les colonnes de deux tables en se basant sur
+une ou plusieurs références mais <em><strong>en gardant seulement les lignes
+sélectionnées dans les deux tables</strong></em>.</p>
+<p>Pour réaliser cette opération il suffit d’ajouter <code>nomatch = NULL</code> ou
+<code>nomatch = 0</code> à l’une quelconque des opérations de jointure précédentes pour
+renvoyer le même résultat.</p>
+<pre><code class="language-r"># First Table
+Products[ProductReceived,
+         on = c(&quot;id&quot; = &quot;product_id&quot;),
+         nomatch = NULL]
+#       id       name price   unit      type  i.id       date count
+#    &lt;int&gt;     &lt;char&gt; &lt;num&gt; &lt;char&gt;    &lt;char&gt; &lt;int&gt;     &lt;IDat&gt; &lt;int&gt;
+# 1:    NA toothpaste  2.99   unit processed     1 2024-01-08   150
+# 2:     1     banana  0.63   unit   natural     2 2024-01-15   100
+# 3:     1     banana  0.63   unit   natural     4 2024-01-29   150
+# 4:     2    carrots  0.89     lb   natural     5 2024-02-05    50
+# 5:     1     banana  0.63   unit   natural     6 2024-02-12   150
+# 6:     2    carrots  0.89     lb   natural     7 2024-02-19   150
+# 7:     2    carrots  0.89     lb   natural     8 2024-02-26   100
+# 8:     1     banana  0.63   unit   natural     9 2024-03-04   100
+# 9:     3    popcorn  2.99   unit processed    10 2024-03-11   150
+
+# Second Table
+ProductReceived[Products,
+                on = .(product_id = id),
+                nomatch = NULL]
+#       id       date product_id count       name price   unit      type
+#    &lt;int&gt;     &lt;IDat&gt;      &lt;int&gt; &lt;int&gt;     &lt;char&gt; &lt;num&gt; &lt;char&gt;    &lt;char&gt;
+# 1:     2 2024-01-15          1   100     banana  0.63   unit   natural
+# 2:     4 2024-01-29          1   150     banana  0.63   unit   natural
+# 3:     6 2024-02-12          1   150     banana  0.63   unit   natural
+# 4:     9 2024-03-04          1   100     banana  0.63   unit   natural
+# 5:     5 2024-02-05          2    50    carrots  0.89     lb   natural
+# 6:     7 2024-02-19          2   150    carrots  0.89     lb   natural
+# 7:     8 2024-02-26          2   100    carrots  0.89     lb   natural
+# 8:    10 2024-03-11          3   150    popcorn  2.99   unit processed
+# 9:     1 2024-01-08         NA   150 toothpaste  2.99   unit processed
+</code></pre>
+<p>Même si les deux tables contiennent la même information, il existe quelques
+différences importantes :</p>
+<ul>
+<li>Elles présentent un ordre différent pour leurs colonnes</li>
+<li>Elles comportent certaines différences de noms dans le nom des colonnes :
+<ul>
+<li>La colonne <code>id</code> de la première table contient les mêmes informations que
+<code>product_id</code> de la seconde table.</li>
+<li>La colonne <code>i.id</code> de la première table a les mêmes informations que <code>id</code> de la
+seconde table.</li>
+</ul>
+</li>
+</ul>
+<h3 id="3-3-non-jointure">3.3. Non jointure</h3>
+<p>Cette méthode extrait <strong>ne garde que les lignes qui ne correspondent pas à
+n’importe quelle ligne d’une seconde table</strong>.</p>
+<p>Pour appliquer cette technique il suffit d’utiliser la négation  (<code>!</code>) sur la
+table qui se trouve dans l’argument <code>i</code> .</p>
+<pre><code class="language-r">Products[!ProductReceived,
+         on = c(&quot;id&quot; = &quot;product_id&quot;)]
+#       id   name price   unit      type
+#    &lt;int&gt; &lt;char&gt; &lt;num&gt; &lt;char&gt;    &lt;char&gt;
+# 1:     4   soda  1.49  ounce processed
+</code></pre>
+<p>Comme on peut le voir, le résultat ne comporte que les bananes car c’est le seul
+produit qui ne figure pas dans la table <code>ProductReceived</code>.</p>
+<pre><code class="language-r">ProductReceived[!Products,
+                on = c(&quot;product_id&quot; = &quot;id&quot;)]
+#       id       date product_id count
+#    &lt;int&gt;     &lt;IDat&gt;      &lt;int&gt; &lt;int&gt;
+# 1:     3 2024-01-22          6   100
+</code></pre>
+<p>Dans ce cas l’opération renvoie la ligne de <code>product_id = 6,</code> car il ne figure
+pas dans la table <code>Products</code>.</p>
+<h3 id="3-4-semi-jointure">3.4. Semi jointure</h3>
+<p>Cette méthode extrait <strong>ne garde que les lignes qui correspondent à n’importe
+quelle ligne d’une seconde table</strong> sans combiner la colonne des tables.</p>
+<p>En tant que jointure ceci est très similaire au sous-ensemble, mais comme cette
+fois nous passons une table complète dans <code>i</code> nous devons vérifier que :</p>
+<ul>
+<li>Chaque ligne de la table <code>x</code> est dupliquée à cause de la duplication des lignes
+dans la table passée dans l’argument <code>i</code>.</li>
+<li>Toutes les lignes renommées de <code>x</code> doivent conserver l’ordre originel des
+lignes.</li>
+</ul>
+<p>Pour faire ceci, suivez les étapes ci-après :</p>
+<ol>
+<li>Réaliser une <strong>jointure interne</strong> avec <code>which = TRUE</code> pour sauvegarder les
+numéros de ligne liés à chaque ligne sélectionnée de la table <code>x</code> .</li>
+</ol>
+<pre><code class="language-r">SubSetRows = Products[
+  ProductReceived,
+  on = .(id = product_id),
+  nomatch = NULL,
+  which = TRUE
+]
+
+SubSetRows
+# [1] 5 1 1 2 1 2 2 1 3
+</code></pre>
+<ol>
+<li>Sélectionner et trier les id uniques de lignes.</li>
+</ol>
+<pre><code class="language-r">SubSetRowsSorted = sort(unique(SubSetRows))
+
+SubSetRowsSorted
+# [1] 1 2 3 5
+</code></pre>
+<ol>
+<li>Sélectionner les <code>x</code> rangées à garder.</li>
+</ol>
+<pre><code class="language-r">Products[SubSetRowsSorted]
+#       id       name price   unit      type
+#    &lt;int&gt;     &lt;char&gt; &lt;num&gt; &lt;char&gt;    &lt;char&gt;
+# 1:     1     banana  0.63   unit   natural
+# 2:     2    carrots  0.89     lb   natural
+# 3:     3    popcorn  2.99   unit processed
+# 4:    NA toothpaste  2.99   unit processed
+</code></pre>
+<h3 id="3-5-jointure-gauche">3.5. Jointure gauche</h3>
+<p>Utilisez cette méthode pour combiner les colonnes de deux tables en se basant sur
+une ou plusieurs références mais <em><strong>en gardant toutes les lignes présentes dans
+la table située à gauche</strong></em>.</p>
+<p>Pour réaliser cette opération, il suffit d’<strong>échanger l’ordre entre les deux
+tables</strong> ainsi que le nom des colonnes dans l’argument <code>on</code>.</p>
+<pre><code class="language-r">ProductReceived[Products,
+                on = list(product_id = id)]
+#        id       date product_id count       name price   unit      type
+#     &lt;int&gt;     &lt;IDat&gt;      &lt;int&gt; &lt;int&gt;     &lt;char&gt; &lt;num&gt; &lt;char&gt;    &lt;char&gt;
+#  1:     2 2024-01-15          1   100     banana  0.63   unit   natural
+#  2:     4 2024-01-29          1   150     banana  0.63   unit   natural
+#  3:     6 2024-02-12          1   150     banana  0.63   unit   natural
+#  4:     9 2024-03-04          1   100     banana  0.63   unit   natural
+#  5:     5 2024-02-05          2    50    carrots  0.89     lb   natural
+#  6:     7 2024-02-19          2   150    carrots  0.89     lb   natural
+#  7:     8 2024-02-26          2   100    carrots  0.89     lb   natural
+#  8:    10 2024-03-11          3   150    popcorn  2.99   unit processed
+#  9:    NA       &lt;NA&gt;          4    NA       soda  1.49  ounce processed
+# 10:     1 2024-01-08         NA   150 toothpaste  2.99   unit processed
+</code></pre>
+<p>Voici des éléments importants à prendre en compte :</p>
+<ul>
+<li>
+<p><strong>Niveau colonne</strong></p>
+<ul>
+<li>Le <em>premier groupe</em> de colonnes vient maintenant de la table <code>ProductReceived</code>
+car il est la table <code>x</code> .</li>
+<li>Le <em>second groupe</em> de colonnes vient maintenant de la table <code>Products</code> car il
+est la table <code>i</code> .</li>
+<li>Le préfixe <code>i.</code> n’a été ajouté à aucune colonne.</li>
+</ul>
+</li>
+<li>
+<p><strong>Niveau ligne</strong></p>
+<ul>
+<li>Toutes les lignes de la table <code>i</code> ont été gardées car nous n’avons jamais reçu
+de bananes et la ligne fait toujours partie des résultats.</li>
+<li>La ligne concernant <code>product_id = 6</code> ne fait plus partie des résultats car elle
+n’est pas présente dans la table <code>Products</code>.</li>
+</ul>
+</li>
+</ul>
+<h4 id="3-5-1-jointure-apr-s-des-op-rations-sur-les-cha-nes">3.5.1. Jointure après des opérations sur les chaînes</h4>
+<p>Une des fonctionnalités clé de <code>data.table</code> est que l’on peut appliquer plusieurs
+opérations en chaînant les crochets, avant d’enregistrer le résultat final.</p>
+<pre><code class="language-r">DT[
+  ...
+][
+  ...
+][
+  ...
+]
+</code></pre>
+<p>Jusqu’à présent, si après avoir exécuté toutes ces opérations <strong>nous souhaitons
+joindre de nouvelles colonnes sans supprimer aucune ligne</strong>, il faut arrêter le
+processus de chaînage, sauvegarder dans une table temporaire puis effectuer
+ultérieurement l’opération de jointure.</p>
+<p>Pour éviter cette situation, nous pouvons utiliser le symbole spécial <code>.SD</code>, pour
+appliquer une <strong>jointure droite en fonction de la table modifiée</strong>.</p>
+<pre><code class="language-r">NewTax[Products,
+       on = c(&quot;unit&quot;, &quot;type&quot;)
+][, ProductReceived[.SD,
+                    on = list(product_id = id)],
+  .SDcols = !c(&quot;unit&quot;, &quot;type&quot;)]
+#        id       date product_id count tax_prop       name price
+#     &lt;int&gt;     &lt;IDat&gt;      &lt;int&gt; &lt;int&gt;    &lt;num&gt;     &lt;char&gt; &lt;num&gt;
+#  1:     2 2024-01-15          1   100       NA     banana  0.63
+#  2:     4 2024-01-29          1   150       NA     banana  0.63
+#  3:     6 2024-02-12          1   150       NA     banana  0.63
+#  4:     9 2024-03-04          1   100       NA     banana  0.63
+#  5:     5 2024-02-05          2    50       NA    carrots  0.89
+#  6:     7 2024-02-19          2   150       NA    carrots  0.89
+#  7:     8 2024-02-26          2   100       NA    carrots  0.89
+#  8:    10 2024-03-11          3   150     0.65    popcorn  2.99
+#  9:    NA       &lt;NA&gt;          4    NA     0.20       soda  1.49
+# 10:     1 2024-01-08         NA   150     0.65 toothpaste  2.99
+</code></pre>
+<h3 id="3-6-jointure-de-plusieurs-plusieurs">3.6. Jointure de plusieurs à plusieurs</h3>
+<p>Sometimes we want to join tables based on columns with <strong>duplicated <code>id</code> values</strong>
+to later perform some transformations later.</p>
+<p>Pour illustrer cette situation, prenons par exemple le <code>product_id == 1L</code>, qui a
+quatre lignes dans notre table <code>ProductReceived</code> .</p>
+<pre><code class="language-r">ProductReceived[product_id == 1L]
+#       id       date product_id count
+#    &lt;int&gt;     &lt;IDat&gt;      &lt;int&gt; &lt;int&gt;
+# 1:     2 2024-01-15          1   100
+# 2:     4 2024-01-29          1   150
+# 3:     6 2024-02-12          1   150
+# 4:     9 2024-03-04          1   100
+</code></pre>
+<p>Et quatre rangées dans notre table <code>ProductSales</code>.</p>
+<pre><code class="language-r">ProductSales[product_id == 1L]
+#       id       date product_id count
+#    &lt;int&gt;     &lt;IDat&gt;      &lt;int&gt; &lt;int&gt;
+# 1:     3 2024-01-18          1    50
+# 2:     4 2024-01-25          1   100
+# 3:     9 2024-02-27          1   150
+# 4:    10 2024-03-08          1    50
+</code></pre>
+<p>Pour réaliser cette jointure il nous suffit de filtrer <code>product_id == 1L</code> dans la
+table <code>i</code> pour limiter la jointure uniquement à ce produit et déclarer
+l’argument <code>allow.cartesian = TRUE</code> pour permettre la combinaison de chaque
+ligne d’une table avec chaque ligne de l’autre table.</p>
+<pre><code class="language-r">ProductReceived[ProductSales[list(1L),
+                             on = &quot;product_id&quot;,
+                             nomatch = NULL],
+                on = &quot;product_id&quot;,
+                allow.cartesian = TRUE]
+#        id       date product_id count  i.id     i.date i.count
+#     &lt;int&gt;     &lt;IDat&gt;      &lt;int&gt; &lt;int&gt; &lt;int&gt;     &lt;IDat&gt;   &lt;int&gt;
+#  1:     2 2024-01-15          1   100     3 2024-01-18      50
+#  2:     4 2024-01-29          1   150     3 2024-01-18      50
+#  3:     6 2024-02-12          1   150     3 2024-01-18      50
+#  4:     9 2024-03-04          1   100     3 2024-01-18      50
+#  5:     2 2024-01-15          1   100     4 2024-01-25     100
+#  6:     4 2024-01-29          1   150     4 2024-01-25     100
+#  7:     6 2024-02-12          1   150     4 2024-01-25     100
+#  8:     9 2024-03-04          1   100     4 2024-01-25     100
+#  9:     2 2024-01-15          1   100     9 2024-02-27     150
+# 10:     4 2024-01-29          1   150     9 2024-02-27     150
+# 11:     6 2024-02-12          1   150     9 2024-02-27     150
+# 12:     9 2024-03-04          1   100     9 2024-02-27     150
+# 13:     2 2024-01-15          1   100    10 2024-03-08      50
+# 14:     4 2024-01-29          1   150    10 2024-03-08      50
+# 15:     6 2024-02-12          1   150    10 2024-03-08      50
+# 16:     9 2024-03-04          1   100    10 2024-03-08      50
+</code></pre>
+<p>Une fois que nous avons assimilé les résultats, nous pouvont appliquer le même
+processus pour <strong>tous les produits</strong>.</p>
+<pre><code class="language-r">ProductReceived[ProductSales,
+                on = &quot;product_id&quot;,
+                allow.cartesian = TRUE]
+#        id       date product_id count  i.id     i.date i.count
+#     &lt;int&gt;     &lt;IDat&gt;      &lt;int&gt; &lt;int&gt; &lt;int&gt;     &lt;IDat&gt;   &lt;int&gt;
+#  1:    NA       &lt;NA&gt;          7    NA     1 2024-01-08      50
+#  2:     5 2024-02-05          2    50     2 2024-01-11     150
+#  3:     7 2024-02-19          2   150     2 2024-01-11     150
+#  4:     8 2024-02-26          2   100     2 2024-01-11     150
+#  5:     2 2024-01-15          1   100     3 2024-01-18      50
+#  6:     4 2024-01-29          1   150     3 2024-01-18      50
+#  7:     6 2024-02-12          1   150     3 2024-01-18      50
+#  8:     9 2024-03-04          1   100     3 2024-01-18      50
+#  9:     2 2024-01-15          1   100     4 2024-01-25     100
+# 10:     4 2024-01-29          1   150     4 2024-01-25     100
+# 11:     6 2024-02-12          1   150     4 2024-01-25     100
+# 12:     9 2024-03-04          1   100     4 2024-01-25     100
+# 13:    10 2024-03-11          3   150     5 2024-01-26     100
+# 14:    10 2024-03-11          3   150     6 2024-02-02     150
+# 15:     5 2024-02-05          2    50     7 2024-02-06     150
+# 16:     7 2024-02-19          2   150     7 2024-02-06     150
+# 17:     8 2024-02-26          2   100     7 2024-02-06     150
+# 18:    NA       &lt;NA&gt;          7    NA     8 2024-02-15     150
+# 19:     2 2024-01-15          1   100     9 2024-02-27     150
+# 20:     4 2024-01-29          1   150     9 2024-02-27     150
+# 21:     6 2024-02-12          1   150     9 2024-02-27     150
+# 22:     9 2024-03-04          1   100     9 2024-02-27     150
+# 23:     2 2024-01-15          1   100    10 2024-03-08      50
+# 24:     4 2024-01-29          1   150    10 2024-03-08      50
+# 25:     6 2024-02-12          1   150    10 2024-03-08      50
+# 26:     9 2024-03-04          1   100    10 2024-03-08      50
+#        id       date product_id count  i.id     i.date i.count
+</code></pre>
+<blockquote>
+<p><code>allow.cartesian</code> vaut par défaut FALSE car c’est ce que l’utilisateur a
+souhaité, et une telle jointure croisée peut conduire à un très grand nombre
+de lignes dans le résultat. Par exemple, si Table A possède 100 lignes et Table
+B en a 50, leur produit cartésien sera 5000 lignes (100 * 50). Ce qui peut
+rapidement accroître la mémoire occupée pour de grands ensembles de données.</p>
+</blockquote>
+<h4 id="3-6-1-selection-d-une-correspondance">3.6.1. Selection d’une correspondance</h4>
+<p>Après avoir fait la jointure de la table, nous pourrions penser qu’on aurait pu
+utiliser une seule jointure pour extraire les informations nécessaires. Dans ce
+cas il y a deux alternatives :</p>
+<ul>
+<li>Nous pouvons sélectionner la <strong>première correspondance</strong>, représentée dans
+l’exemple suivant par <code>id = 2</code>.</li>
+</ul>
+<pre><code class="language-r">ProductReceived[ProductSales[product_id == 1L],
+                on = .(product_id),
+                allow.cartesian = TRUE,
+                mult = &quot;first&quot;]
+#       id       date product_id count  i.id     i.date i.count
+#    &lt;int&gt;     &lt;IDat&gt;      &lt;int&gt; &lt;int&gt; &lt;int&gt;     &lt;IDat&gt;   &lt;int&gt;
+# 1:     2 2024-01-15          1   100     3 2024-01-18      50
+# 2:     2 2024-01-15          1   100     4 2024-01-25     100
+# 3:     2 2024-01-15          1   100     9 2024-02-27     150
+# 4:     2 2024-01-15          1   100    10 2024-03-08      50
+</code></pre>
+<ul>
+<li>Nous pouvons sélectionner la <strong>dernière correspondance</strong>, représentée dans
+l’exemple suivant par <code>id = 9</code>.</li>
+</ul>
+<pre><code class="language-r">ProductReceived[ProductSales[product_id == 1L],
+                on = .(product_id),
+                allow.cartesian = TRUE,
+                mult = &quot;last&quot;]
+#       id       date product_id count  i.id     i.date i.count
+#    &lt;int&gt;     &lt;IDat&gt;      &lt;int&gt; &lt;int&gt; &lt;int&gt;     &lt;IDat&gt;   &lt;int&gt;
+# 1:     9 2024-03-04          1   100     3 2024-01-18      50
+# 2:     9 2024-03-04          1   100     4 2024-01-25     100
+# 3:     9 2024-03-04          1   100     9 2024-02-27     150
+# 4:     9 2024-03-04          1   100    10 2024-03-08      50
+</code></pre>
+<h4 id="3-6-2-jointure-crois-e">3.6.2. Jointure croisée</h4>
+<p>Si vous voulez obtenir <strong>toutes les combinaisons possibles de lignes</strong> quelque
+soit l’id de colonne, vous  pouvez suivre le processus suivant :</p>
+<ol>
+<li>Créer une nouvelle colonne dans les deux tables avec une constante.</li>
+</ol>
+<pre><code class="language-r">ProductsTempId = copy(Products)[, temp_id := 1L]
+</code></pre>
+<ol>
+<li>Joindre les deux tables en fonction de la nouvelle colonne et supprimer cette
+dernnière à la fin de la manipulation parce qu’il n’y a pas de raison pour la
+garder.</li>
+</ol>
+<pre><code class="language-r">AllProductsMix =
+  ProductsTempId[ProductsTempId,
+                 on = &quot;temp_id&quot;,
+                 allow.cartesian = TRUE]
+
+AllProductsMix[, temp_id := NULL]
+
+# Removing type to make easier to see the result when printing the table
+AllProductsMix[, !c(&quot;type&quot;, &quot;i.type&quot;)]
+#        id       name price   unit  i.id     i.name i.price i.unit
+#     &lt;int&gt;     &lt;char&gt; &lt;num&gt; &lt;char&gt; &lt;int&gt;     &lt;char&gt;   &lt;num&gt; &lt;char&gt;
+#  1:     1     banana  0.63   unit     1     banana    0.63   unit
+#  2:     2    carrots  0.89     lb     1     banana    0.63   unit
+#  3:     3    popcorn  2.99   unit     1     banana    0.63   unit
+#  4:     4       soda  1.49  ounce     1     banana    0.63   unit
+#  5:    NA toothpaste  2.99   unit     1     banana    0.63   unit
+#  6:     1     banana  0.63   unit     2    carrots    0.89     lb
+#  7:     2    carrots  0.89     lb     2    carrots    0.89     lb
+#  8:     3    popcorn  2.99   unit     2    carrots    0.89     lb
+#  9:     4       soda  1.49  ounce     2    carrots    0.89     lb
+# 10:    NA toothpaste  2.99   unit     2    carrots    0.89     lb
+# 11:     1     banana  0.63   unit     3    popcorn    2.99   unit
+# 12:     2    carrots  0.89     lb     3    popcorn    2.99   unit
+# 13:     3    popcorn  2.99   unit     3    popcorn    2.99   unit
+# 14:     4       soda  1.49  ounce     3    popcorn    2.99   unit
+# 15:    NA toothpaste  2.99   unit     3    popcorn    2.99   unit
+# 16:     1     banana  0.63   unit     4       soda    1.49  ounce
+# 17:     2    carrots  0.89     lb     4       soda    1.49  ounce
+# 18:     3    popcorn  2.99   unit     4       soda    1.49  ounce
+# 19:     4       soda  1.49  ounce     4       soda    1.49  ounce
+# 20:    NA toothpaste  2.99   unit     4       soda    1.49  ounce
+# 21:     1     banana  0.63   unit    NA toothpaste    2.99   unit
+# 22:     2    carrots  0.89     lb    NA toothpaste    2.99   unit
+# 23:     3    popcorn  2.99   unit    NA toothpaste    2.99   unit
+# 24:     4       soda  1.49  ounce    NA toothpaste    2.99   unit
+# 25:    NA toothpaste  2.99   unit    NA toothpaste    2.99   unit
+#        id       name price   unit  i.id     i.name i.price i.unit
+</code></pre>
+<h3 id="3-7-jointure-compl-te">3.7. Jointure complète</h3>
+<p>Utilisez cette méthode pour combiner les colonnes de deux tables en se basant sur
+une ou plusieurs références mais <em><strong>sans supprimer aucune ligne</strong></em>.</p>
+<p>Comme vu dans la section précédente, toutes les opérations ci-avant peuvent
+conserver le <code>product_id = 6</code> absent et le <strong>soda</strong> (<code>product_id = 4</code>) comme
+faisant partie du résultat.</p>
+<p>Pour résoudre ce problème nous pouvons utiliser la fonction <code>merge</code> bien qu’elle
+soit moins préférable à l’utilisation de la syntaxe de jointure native de
+<code>data.table</code>.</p>
+<pre><code class="language-r">merge(x = Products,
+      y = ProductReceived,
+      by.x = &quot;id&quot;,
+      by.y = &quot;product_id&quot;,
+      all = TRUE,
+      sort = FALSE)
+#        id       name price   unit      type  id.y       date count
+#     &lt;int&gt;     &lt;char&gt; &lt;num&gt; &lt;char&gt;    &lt;char&gt; &lt;int&gt;     &lt;IDat&gt; &lt;int&gt;
+#  1:     1     banana  0.63   unit   natural     2 2024-01-15   100
+#  2:     1     banana  0.63   unit   natural     4 2024-01-29   150
+#  3:     1     banana  0.63   unit   natural     6 2024-02-12   150
+#  4:     1     banana  0.63   unit   natural     9 2024-03-04   100
+#  5:     2    carrots  0.89     lb   natural     5 2024-02-05    50
+#  6:     2    carrots  0.89     lb   natural     7 2024-02-19   150
+#  7:     2    carrots  0.89     lb   natural     8 2024-02-26   100
+#  8:     3    popcorn  2.99   unit processed    10 2024-03-11   150
+#  9:     4       soda  1.49  ounce processed    NA       &lt;NA&gt;    NA
+# 10:    NA toothpaste  2.99   unit processed     1 2024-01-08   150
+# 11:     6       &lt;NA&gt;    NA   &lt;NA&gt;      &lt;NA&gt;     3 2024-01-22   100
+</code></pre>
+<h2 id="4-jointure-non-quilibr-e">4. Jointure non équilibrée</h2>
+<p>Une jointure de non équivalence est un type de jointure où la condition pour
+sélectionner les lignes n’est pas basée sur une égalité mais sur d’autres
+opérateurs de comparaison tels que &lt;, &gt;, &lt;=, ou &gt;=. Ceci permet des <strong>critères
+plus flexibles de jointure</strong>. Dans <code>data.table</code>, le jointures non équivalentes
+sont particulièrement utiles pour les opérations telles  que :</p>
+<ul>
+<li>Recherche de la correspondance la plus proche</li>
+<li>Comparaison d’intervalles de valeurs entre deux tables</li>
+</ul>
+<p>C’est une alternative intéressante si elle est appliquée à droite d’une jointure
+interne.</p>
+<ul>
+<li>Vous souhaitez diminuer le nombre de lignes renvoyées en fonction du résultat
+de la comparaison des colonnes numériques de tables différentes.</li>
+<li>Il n’est pas nécessaire de garder les colonnes de la table <code>x</code><em>(data.table
+secondaire)</em> dans la table finale.</li>
+</ul>
+<p>Pour illustrer le fonctionnement, concentrons-nous sur les promotions et les
+réceptions de product 2.</p>
+<pre><code class="language-r">ProductSalesProd2 = ProductSales[product_id == 2L]
+ProductReceivedProd2 = ProductReceived[product_id == 2L]
+</code></pre>
+<p>Si l’on veut savoir par exemple si quelque chose a été reçu avant la date des
+promotions, nous pouvons utiliser le code suivant.</p>
+<pre><code class="language-r">ProductReceivedProd2[ProductSalesProd2,
+                     on = &quot;product_id&quot;,
+                     allow.cartesian = TRUE
+][date &lt; i.date]
+#       id       date product_id count  i.id     i.date i.count
+#    &lt;int&gt;     &lt;IDat&gt;      &lt;int&gt; &lt;int&gt; &lt;int&gt;     &lt;IDat&gt;   &lt;int&gt;
+# 1:     5 2024-02-05          2    50     7 2024-02-06     150
+</code></pre>
+<p>Que se passe-t-il si nous appliquons simplement la même logique à la liste passée
+à <code>on</code> ?</p>
+<ul>
+<li>Comme cette opération est encore une jointure droite, elle renvoie toutes les
+lignes de la table <code>i</code> , mais n’affiche que les valeurs de <code>id</code> et <code>count</code>
+lorsque les règles sont vérifiées.</li>
+<li>La date correspondant à <code>ProductReceivedProd2</code> a été omise de cette nouvelle
+table.</li>
+</ul>
+<pre><code class="language-r">ProductReceivedProd2[ProductSalesProd2,
+                     on = list(product_id, date &lt; date)]
+#       id       date product_id count  i.id i.count
+#    &lt;int&gt;     &lt;IDat&gt;      &lt;int&gt; &lt;int&gt; &lt;int&gt;   &lt;int&gt;
+# 1:    NA 2024-01-11          2    NA     2     150
+# 2:     5 2024-02-06          2    50     7     150
+</code></pre>
+<p>Maintenant après avoir appliqué la jointure, nous pouvons limiter les résultats
+pour n’afficher que les cas qui satisfont tous les critères de jointure.</p>
+<pre><code class="language-r">ProductReceivedProd2[ProductSalesProd2,
+                     on = list(product_id, date &lt; date),
+                     nomatch = NULL]
+#       id       date product_id count  i.id i.count
+#    &lt;int&gt;     &lt;IDat&gt;      &lt;int&gt; &lt;int&gt; &lt;int&gt;   &lt;int&gt;
+# 1:     5 2024-02-06          2    50     7     150
+</code></pre>
+<h2 id="5-jointure-glissante">5. Jointure glissante</h2>
+<p>Les jointures glissantes sont particulièrement utiles si vous faites des analyses
+de données sur des séries temporelles. Elles permettent de <strong>prendre en compte
+les lignes basées sur la valeur la plus proche</strong> dans une colonne triée,
+typiquement une colonne avec une date ou un horodatage.</p>
+<p>C’est utile lorsque vous avez besoin d’aligner des données de sources différentes
+<strong>qui n’ont pas forcément les mêmes horodatages</strong>, ou si vous souhaitez
+continuer avec la valeur la plus récente.</p>
+<p>Par exemple, avec des données financières, vous pourriez utiliser une jointure
+glissante pour assigner la valeur la plus récente d’une action à chaque
+transaction, même si les mises à jour du prix et les transactions ne
+correspondent pas exactement aux mêmes instants.</p>
+<p>Dans notre exemple de supermarché nous pouvons utiliser une jointure glissante
+pour correspondre aux promotions avec les informations de produit les plus
+récentes.</p>
+<p>Supposons que le prix des bananes et des carottes change le premier jour de
+chaque mois.</p>
+<pre><code class="language-r">ProductPriceHistory = data.table(
+  product_id = rep(1:2, each = 3),
+  date = rep(as.IDate(c(&quot;2024-01-01&quot;, &quot;2024-02-01&quot;, &quot;2024-03-01&quot;)), 2),
+  price = c(0.59, 0.63, 0.65,  # Banana prices
+            0.79, 0.89, 0.99)  # Carrot prices
+)
+
+ProductPriceHistory
+#    product_id       date price
+#         &lt;int&gt;     &lt;IDat&gt; &lt;num&gt;
+# 1:          1 2024-01-01  0.59
+# 2:          1 2024-02-01  0.63
+# 3:          1 2024-03-01  0.65
+# 4:          2 2024-01-01  0.79
+# 5:          2 2024-02-01  0.89
+# 6:          2 2024-03-01  0.99
+</code></pre>
+<p>Maintenant nous pouvons réaliser une jointure droite en donnant un prix différent
+à chaque produit en fonction de la date de promotion.</p>
+<pre><code class="language-r">ProductPriceHistory[ProductSales,
+                    on = .(product_id, date),
+                    roll = TRUE,
+                    j = .(product_id, date, count, price)]
+#     product_id       date count price
+#          &lt;int&gt;     &lt;IDat&gt; &lt;int&gt; &lt;num&gt;
+#  1:          7 2024-01-08    50    NA
+#  2:          2 2024-01-11   150  0.79
+#  3:          1 2024-01-18    50  0.59
+#  4:          1 2024-01-25   100  0.59
+#  5:          3 2024-01-26   100    NA
+#  6:          3 2024-02-02   150    NA
+#  7:          2 2024-02-06   150  0.89
+#  8:          7 2024-02-15   150    NA
+#  9:          1 2024-02-27   150  0.63
+# 10:          1 2024-03-08    50  0.65
+</code></pre>
+<p>Si nous voulons simplement voir les cas de correspondance, il suffit d’ajouter
+l’argument <code>nomatch = NULL</code> pour réaliser une jointure glissante en interne.</p>
+<pre><code class="language-r">ProductPriceHistory[ProductSales,
+                    on = .(product_id, date),
+                    roll = TRUE,
+                    nomatch = NULL,
+                    j = .(product_id, date, count, price)]
+#    product_id       date count price
+#         &lt;int&gt;     &lt;IDat&gt; &lt;int&gt; &lt;num&gt;
+# 1:          2 2024-01-11   150  0.79
+# 2:          1 2024-01-18    50  0.59
+# 3:          1 2024-01-25   100  0.59
+# 4:          2 2024-02-06   150  0.89
+# 5:          1 2024-02-27   150  0.63
+# 6:          1 2024-03-08    50  0.65
+</code></pre>
+<h2 id="7-avantage-de-la-vitesse-de-jointure">7. Avantage de la vitesse de jointure</h2>
+<h3 id="7-1-sous-ensembles-en-tant-que-jointures">7.1. Sous-ensembles en tant que jointures</h3>
+<p>Comme nous venons de le voir, dans la section précédente la table <code>x</code> est filtrée
+par les valeurs de la table <code>i</code> . Actuellement cette méthode est plus rapide que
+de passer une expression booléenne dans l’argument <code>i</code>.</p>
+<p>Pour filtrer la table <code>x</code> rapidement nous ne passons pas la <code>data.table</code> entière,
+nous pouvons passer une <code>list()</code> de vecteurs avec les valeurs de la table
+originale que nous voulons garder ou omettre.</p>
+<p>Par exemple pour filtrer les dates auxquelles le marché a reçu 100 unités de
+bananes (<code>product_id = 1</code>) ou de popcorn (<code>product_id = 3</code>) nous pouvons
+utiliser ceci :</p>
+<pre><code class="language-r">ProductReceived[list(c(1L, 3L), 100L),
+                on = c(&quot;product_id&quot;, &quot;count&quot;)]
+#       id       date product_id count
+#    &lt;int&gt;     &lt;IDat&gt;      &lt;int&gt; &lt;int&gt;
+# 1:     2 2024-01-15          1   100
+# 2:     9 2024-03-04          1   100
+# 3:    NA       &lt;NA&gt;          3   100
+</code></pre>
+<p>Nous voici à la fin, nous filtrons le code <strong>ligne absente dans la table
+originale</strong> renvoyé suite à la jointure. Pour éviter ce comportement il est
+recommandé de toujours ajouter l’argument <code>nomatch = NULL</code>.</p>
+<pre><code class="language-r">ProductReceived[list(c(1L, 3L), 100L),
+                on = c(&quot;product_id&quot;, &quot;count&quot;),
+                nomatch = NULL]
+#       id       date product_id count
+#    &lt;int&gt;     &lt;IDat&gt;      &lt;int&gt; &lt;int&gt;
+# 1:     2 2024-01-15          1   100
+# 2:     9 2024-03-04          1   100
+</code></pre>
+<p>Nous pouvons aussi utiliser cette technique pour filtrer toute combinaison de
+valeurs en les préfixant avec <code>!</code> pour obtenir la négation de l’expression dans
+l’argument <code>i</code> et en gardant le <code>nomatch</code> à sa valeur par défaut. Par exemple
+nous pouvons filtrer les deux lignes filtrées précédemment.</p>
+<pre><code class="language-r">ProductReceived[!list(c(1L, 3L), 100L),
+                on = c(&quot;product_id&quot;, &quot;count&quot;)]
+#       id       date product_id count
+#    &lt;int&gt;     &lt;IDat&gt;      &lt;int&gt; &lt;int&gt;
+# 1:     1 2024-01-08         NA   150
+# 2:     3 2024-01-22          6   100
+# 3:     4 2024-01-29          1   150
+# 4:     5 2024-02-05          2    50
+# 5:     6 2024-02-12          1   150
+# 6:     7 2024-02-19          2   150
+# 7:     8 2024-02-26          2   100
+# 8:    10 2024-03-11          3   150
+</code></pre>
+<p>Si vous voulez simplement filtrer une valeur pour une <strong>colonne de caractères</strong>
+seule, vous pouvez ne pas appeler la fonction <code>list()</code> et passer la valeur pour
+être filtrée dans l’argument <code>i</code>.</p>
+<pre><code class="language-r">Products[c(&quot;banana&quot;,&quot;popcorn&quot;),
+         on = &quot;name&quot;,
+         nomatch = NULL]
+#       id    name price   unit      type
+#    &lt;int&gt;  &lt;char&gt; &lt;num&gt; &lt;char&gt;    &lt;char&gt;
+# 1:     1  banana  0.63   unit   natural
+# 2:     3 popcorn  2.99   unit processed
+
+Products[!&quot;popcorn&quot;,
+         on = &quot;name&quot;]
+#       id       name price   unit      type
+#    &lt;int&gt;     &lt;char&gt; &lt;num&gt; &lt;char&gt;    &lt;char&gt;
+# 1:     1     banana  0.63   unit   natural
+# 2:     2    carrots  0.89     lb   natural
+# 3:     4       soda  1.49  ounce processed
+# 4:    NA toothpaste  2.99   unit processed
+</code></pre>
+<h3 id="7-2-mise-jour-par-r-f-rence">7.2. Mise à jour par référence</h3>
+<p>L’opérateur <code>:=</code> de data.table est utilisé pour mettre à jour ou ajouter des
+colonnes par référence. Cela signifie qu’il modifie la data.table originale sans
+créer de copie , ce qui est très efficace en termes de mémoire, particulièrement
+avec les grands ensembles de données. Lorsqu’il est utilisé à l’intérieur d’une
+data.table, <code>:=</code> permet d’<strong>ajouter de nouvelles colonnes</strong> ou de <strong>modifier des
+colonnes existantes</strong> à l’intérieur d’une même requête.</p>
+<p>Mettons à jour notre table <code>Products</code> avec le dernier prix connu de
+<code>ProductPriceHistory</code> :</p>
+<pre><code class="language-r">copy(Products)[ProductPriceHistory,
+               on = .(id = product_id),
+               j = `:=`(price = tail(i.price, 1),
+                        last_updated = tail(i.date, 1)),
+               by = .EACHI][]
+#       id       name price   unit      type last_updated
+#    &lt;int&gt;     &lt;char&gt; &lt;num&gt; &lt;char&gt;    &lt;char&gt;       &lt;IDat&gt;
+# 1:     1     banana  0.65   unit   natural   2024-03-01
+# 2:     2    carrots  0.99     lb   natural   2024-03-01
+# 3:     3    popcorn  2.99   unit processed         &lt;NA&gt;
+# 4:     4       soda  1.49  ounce processed         &lt;NA&gt;
+# 5:    NA toothpaste  2.99   unit processed         &lt;NA&gt;
+</code></pre>
+<p>Dans cette opération :</p>
+<ul>
+<li>La fonction <code>copy</code> empêche que <code>:=</code> modifie par référence les tables <code>Products</code>.</li>
+<li>Nous réalisons la jointure de <code>Products</code> avec <code>ProductPriceHistory</code> en fonction
+de <code>id</code> et de <code>product_id</code>.</li>
+<li>Nous mettons à jour la colonne <code>price</code> avec le prix le plus récent de
+<code>ProductPriceHistory</code>.</li>
+<li>Nous ajoutons une nouvelle colonne <code>last_updated</code> qui mémorisera la date du
+dernier changement de prix.</li>
+<li>Le <code>by = .EACHI</code> assure que la fonction <code>tail</code> est appliquée à chaque produit
+de <code>ProductPriceHistory</code>.</li>
+</ul>
+<hr />
+<h2 id="r-f-rence">Référence</h2>
+<ul>
+<li><em>Comprendre les jointures glissantes de data.table</em>:
+<a href="https://www.r-bloggers.com/2016/06/understanding-data-table-rolling-joins/">https://www.r-bloggers.com/2016/06/understanding-data-table-rolling-joins/</a></li>
+<li><em>Demi-jointure avec data.table</em>:
+<a href="https://stackoverflow.com/questions/18969420/perform-a-semi-join-with-data-table">https://stackoverflow.com/questions/18969420/perform-a-semi-join-with-data-table</a></li>
+<li><em>Jointure croisée avec with data.table</em>:
+<a href="https://stackoverflow.com/questions/10600060/how-to-do-cross-join-in-r">https://stackoverflow.com/questions/10600060/how-to-do-cross-join-in-r</a></li>
+<li><em>Comment réaliser une jointure complète à l’aide de data.table ?</em>:
+<a href="https://stackoverflow.com/questions/15170741/how-does-one-do-a-full-join-using-data-table">https://stackoverflow.com/questions/15170741/how-does-one-do-a-full-join-using-data-table</a></li>
+<li><em>data.frame étendu</em>:
+<a href="https://rdatatable.gitlab.io/data.table/reference/data.table.html">https://rdatatable.gitlab.io/data.table/reference/data.table.html</a></li>
+</ul>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
+</body>
+</html>
