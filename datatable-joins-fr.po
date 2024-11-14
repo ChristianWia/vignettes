@@ -115,7 +115,7 @@ msgstr ""
 
 #: datatable-joinsMA695.Rmd:block 16 (header)
 msgid "2. `data.table` joining syntax"
-msgstr "2. Syntaxe le la jointure `data.table`"
+msgstr "2. Syntaxe de la jointure `data.table`"
 
 #: datatable-joinsMA695.Rmd:block 17 (paragraph)
 msgid ""
