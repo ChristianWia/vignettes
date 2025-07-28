@@ -3,7 +3,7 @@
 .write.translation.links <- function(fmt) {
     url = "https://rdatatable.gitlab.io/data.table/articles"
     path = dirname(knitr::current_input(TRUE))
-    sprintf(path)
+    print(path)
     if (basename(path) == "vignettes") {
       lang = "en"
     } else {
